@@ -1,0 +1,10 @@
+{
+  "description": "Streamline computer lab management with an intuitive dashboard for tracking student attendance, asset inventory, and generating reports for efficient operations.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
