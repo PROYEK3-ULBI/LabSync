@@ -1,0 +1,1793 @@
+# MASTER PROMPT FIGMA MAKE
+
+## UI/UX DESIGN SPECIFICATION
+
+### RANCANG BANGUN WEB SERVICE PRESENSI DAN MANAJEMEN ASET LABORATORIUM KOMPUTER MENGGUNAKAN METODE AGILE
+
+Create a complete, professional, desktop-first web UI/UX design and interactive prototype for a laboratory computer attendance and asset management system.
+
+This is a WEB-ONLY product. Do not create Android, iOS, or mobile application screens.
+
+The product consists of two separate web applications that use the same backend system:
+
+1. Student Web
+2. Admin / Laboratory Staff Web
+
+The interface must look like a real production-ready academic laboratory management system, not a generic dashboard template.
+
+The design must prioritize clarity, usability, consistency, accessibility, and realistic operational workflows.
+
+---
+
+# 1. PRODUCT CONTEXT
+
+Product name:
+
+RANCANG BANGUN WEB SERVICE PRESENSI DAN MANAJEMEN ASET LABORATORIUM KOMPUTER MENGGUNAKAN METODE AGILE
+
+Product type:
+
+Web-based laboratory attendance and asset management system.
+
+Target users:
+
+* Mahasiswa
+* Admin / Laboran / Tata Usaha
+
+Main product capabilities:
+
+* Authentication
+* User profile
+* Face enrollment
+* Face verification through browser camera
+* Practical session management
+* Attendance
+* Check-in
+* Check-out
+* Asset management
+* Asset allocation
+* Asset return
+* Asset history
+* Maintenance
+* Reporting
+* Dashboard
+
+Important business concept:
+
+A student logs in first. The system already knows the student's identity.
+
+The student then uses the browser camera for FACE VERIFICATION 1:1.
+
+The system compares the face in front of the camera with the student's own registered face template.
+
+Do NOT design face identification 1:N.
+
+Do NOT design QR Code as the primary attendance method.
+
+Do NOT design RFID.
+
+Do NOT design hardware biometric scanners.
+
+Do NOT design mobile applications.
+
+The UI should communicate that face verification is a verification process, not a search for identity.
+
+---
+
+# 2. PRIMARY DESIGN GOAL
+
+Create a UI/UX system that communicates:
+
+* trustworthy
+* modern
+* professional
+* academic
+* technical
+* organized
+* secure
+* easy to understand
+* efficient for repetitive laboratory operations
+
+The visual language should feel appropriate for a university computer laboratory management application.
+
+Avoid:
+
+* flashy startup aesthetics
+* excessive gradients
+* gaming aesthetics
+* overly futuristic interfaces
+* unnecessary glassmorphism
+* excessive animation
+* decorative elements that reduce usability
+* generic banking dashboard appearance
+
+---
+
+# 3. DESIGN DIRECTION
+
+Use a clean modern enterprise dashboard style with an academic technology character.
+
+Design characteristics:
+
+* desktop-first
+* responsive web principles
+* clear hierarchy
+* generous but controlled spacing
+* readable typography
+* structured information
+* clear status indicators
+* consistent cards
+* consistent tables
+* simple forms
+* professional navigation
+* subtle borders
+* restrained shadows
+* accessible contrast
+
+Recommended visual direction:
+
+* light theme as primary
+* neutral background
+* dark readable text
+* blue as primary action color
+* green for successful states
+* amber/orange for warning states
+* red for destructive/error states
+* slate/gray for neutral states
+
+Do not make the interface visually dependent on color alone. Statuses must also use text, icons, or labels.
+
+---
+
+# 4. DESIGN SYSTEM
+
+Create a reusable design system before creating the full application.
+
+Include:
+
+## Typography
+
+Use a modern sans-serif typeface.
+
+Hierarchy:
+
+* Display
+* Page Title
+* Section Heading
+* Card Heading
+* Body
+* Small / Caption
+* Label
+
+Typography must be readable and appropriate for dense administrative tables.
+
+## Color System
+
+Create semantic tokens:
+
+* Primary
+* Primary Hover
+* Background
+* Surface
+* Border
+* Text Primary
+* Text Secondary
+* Success
+* Warning
+* Error
+* Info
+* Disabled
+
+Use colors consistently across both applications.
+
+## Spacing
+
+Use a consistent spacing scale.
+
+## Border Radius
+
+Use moderate radius values.
+
+Do not make every component excessively rounded.
+
+## Shadows
+
+Use subtle shadows only for elevated surfaces.
+
+## Icons
+
+Use a consistent outline icon style.
+
+Do not mix unrelated icon styles.
+
+---
+
+# 5. GLOBAL NAVIGATION
+
+Both applications should use a consistent navigation framework.
+
+Desktop layout:
+
+* left sidebar
+* top header
+* main content area
+
+The sidebar must clearly identify the current page.
+
+Top header should include:
+
+* page/context information
+* notification area if needed
+* user profile menu
+* logout action
+
+The navigation structure must be different according to role.
+
+---
+
+# 6. STUDENT WEB
+
+Create a complete Student Web application.
+
+Student Web is designed for students attending laboratory practical sessions.
+
+## Student Navigation
+
+Suggested structure:
+
+Dashboard
+
+Practical Sessions
+
+Attendance
+
+My Assets
+
+History
+
+Profile
+
+Logout
+
+The final visual navigation should remain simple and avoid unnecessary menu items.
+
+---
+
+# 7. STUDENT — LOGIN
+
+Create a professional login screen.
+
+Elements:
+
+* system logo/mark
+* system name
+* welcome text
+* email/identifier field
+* password field
+* show/hide password
+* login button
+* validation message
+* loading state
+
+Do not include social login.
+
+Do not include unnecessary registration flow.
+
+Include:
+
+* invalid credential state
+* inactive account state
+* empty field validation
+* API error state
+* loading state
+
+---
+
+# 8. STUDENT — DASHBOARD
+
+Create the student dashboard.
+
+The dashboard should immediately answer:
+
+* Am I scheduled for a practical session?
+* Have I attended today?
+* What is my attendance status?
+* What asset is assigned to me?
+* What is the current session status?
+
+Include:
+
+### Summary cards
+
+* Today's Session
+* Attendance Status
+* Current Asset
+* Verification Status
+
+### Main section
+
+Upcoming / Active Practical Session.
+
+Show:
+
+* session name
+* date
+* time
+* room/laboratory
+* session status
+* action button
+
+Primary CTA:
+
+"Start Attendance"
+
+### Secondary section
+
+Current asset allocation.
+
+Show:
+
+* asset code
+* asset name
+* allocation status
+* session
+* allocated time
+
+---
+
+# 9. STUDENT — PRACTICAL SESSION
+
+Create a session listing page.
+
+Components:
+
+* page title
+* filter by date/status if needed
+* session cards or table
+* status badge
+* session date
+* time
+* laboratory room
+* session title
+* attendance status
+* action button
+
+Statuses:
+
+* Upcoming
+* Active
+* Closed
+* Cancelled
+* Attended
+* Not Attended
+
+Make the active session visually prominent.
+
+---
+
+# 10. STUDENT — FACE ENROLLMENT
+
+Create a dedicated face enrollment experience.
+
+The design must clearly explain what is happening.
+
+Page structure:
+
+* title
+* short explanation
+* privacy notice
+* camera area
+* face positioning guide
+* status indicator
+* capture / continue action
+* retry state
+
+Camera area:
+
+* large centered camera preview
+* face guide overlay
+* instruction:
+  "Posisikan wajah di dalam area"
+* status:
+  "Wajah terdeteksi"
+  "Wajah belum terdeteksi"
+  "Pastikan hanya satu wajah terlihat"
+
+Do not display technical embedding information.
+
+Do not display model details to the student.
+
+Enrollment states:
+
+1. Initial
+2. Camera permission required
+3. Camera ready
+4. Face detected
+5. Processing
+6. Enrollment successful
+7. Enrollment failed
+8. Multiple faces detected
+9. No face detected
+10. Camera unavailable
+
+Success state:
+
+Show clear confirmation that the student's face template has been registered.
+
+---
+
+# 11. STUDENT — FACE VERIFICATION
+
+This is one of the most important screens.
+
+Create a highly polished verification interface.
+
+Context:
+
+The student has already logged in.
+
+The interface must communicate:
+
+"You are verifying your identity for attendance."
+
+Do not communicate:
+
+"Searching for your identity."
+
+Layout:
+
+### Left or center
+
+Large camera preview.
+
+### Camera overlay
+
+Face guide.
+
+### Right or below
+
+Verification information:
+
+* Student name
+* Current session
+* Verification status
+* Instruction
+
+Possible statuses:
+
+* Ready
+* Detecting face
+* Verifying
+* Verification successful
+* Verification failed
+* Camera unavailable
+* Multiple faces detected
+* Face not detected
+
+Primary flow:
+
+```text
+Ready
+↓
+Camera active
+↓
+Face detected
+↓
+Verifying
+↓
+Verification successful
+↓
+Continue to attendance
+```
+
+Verification success must clearly transition to attendance success.
+
+Verification failure must allow retry.
+
+Do not expose similarity score to ordinary users.
+
+---
+
+# 12. STUDENT — ATTENDANCE CHECK-IN
+
+Create a check-in confirmation screen.
+
+Show:
+
+* student name
+* session name
+* date
+* time
+* room
+* verification status
+* attendance action
+
+Success screen:
+
+"Presensi berhasil"
+
+Show:
+
+* check-in time
+* session
+* attendance status
+
+Provide next action:
+
+"View Attendance Detail"
+
+Optional secondary action:
+
+"View Asset Allocation"
+
+The success screen must be visually distinct and reassuring.
+
+---
+
+# 13. STUDENT — CHECK-OUT
+
+Create check-out UI.
+
+Show:
+
+* active attendance
+* check-in time
+* session information
+* current time
+* check-out button
+
+Use confirmation dialog before final check-out.
+
+After success:
+
+"Check-out berhasil"
+
+Display:
+
+* check-in time
+* check-out time
+* session duration if applicable
+
+---
+
+# 14. STUDENT — ATTENDANCE HISTORY
+
+Create a student attendance history page.
+
+Use a clean table.
+
+Columns:
+
+* Date
+* Session
+* Laboratory
+* Check-in
+* Check-out
+* Status
+
+Filters:
+
+* date
+* status
+* session
+
+Statuses:
+
+* Present
+* Completed
+* Pending
+* Failed
+
+Include:
+
+* empty state
+* loading state
+* filter state
+* pagination
+
+---
+
+# 15. STUDENT — MY ASSETS
+
+Create a page showing assets currently or historically assigned to the student.
+
+Active allocation card should show:
+
+* asset code
+* asset name
+* brand/model
+* session
+* allocation time
+* condition
+* status
+
+Use example data such as:
+
+Dell Latitude 5490 Core i7
+Asset Code: LAB-LT-007
+
+This is example data only and should be visually presented as realistic sample content, not institutional real data.
+
+---
+
+# 16. STUDENT — ASSET HISTORY
+
+Create a timeline/table for asset usage.
+
+Show:
+
+* date
+* asset code
+* session
+* allocated time
+* returned time
+* condition
+* status
+
+Include a clean timeline or table visualization.
+
+---
+
+# 17. STUDENT — PROFILE
+
+Create a profile page.
+
+Show:
+
+* profile information
+* student identifier
+* email
+* account status
+* face enrollment status
+
+Actions:
+
+* update allowed profile information
+* face re-enrollment status/action where applicable
+* logout
+
+Do not show biometric embedding values.
+
+---
+
+# 18. ADMIN WEB
+
+Create a separate Admin / Laboratory Staff application.
+
+This application is optimized for operational management.
+
+Admin navigation:
+
+Dashboard
+
+Users
+
+Practical Sessions
+
+Attendance
+
+Assets
+
+Allocations
+
+Maintenance
+
+Reports
+
+Audit Log
+
+Profile
+
+Logout
+
+---
+
+# 19. ADMIN — LOGIN
+
+Create a professional admin login page.
+
+Use the same design system but visually distinguish the operational/admin context.
+
+Include:
+
+* identifier/email
+* password
+* login
+* loading
+* validation
+* authentication error
+
+Do not include student-specific face verification on the admin login.
+
+---
+
+# 20. ADMIN — DASHBOARD
+
+Create a high-quality administrative dashboard.
+
+The dashboard should provide an immediate overview.
+
+Summary cards:
+
+* Active Sessions
+* Today's Attendance
+* Available Assets
+* Allocated Assets
+* Assets in Maintenance
+
+Main dashboard sections:
+
+### Attendance Overview
+
+Show attendance status summary.
+
+### Asset Status Overview
+
+Show:
+
+* Available
+* Allocated
+* Maintenance
+* Retired
+
+### Active Sessions
+
+Show:
+
+* session
+* room
+* time
+* attendance progress
+
+### Maintenance Summary
+
+Show:
+
+* Open
+* In Progress
+* Completed
+
+### Recent Activity
+
+Show recent operational activities.
+
+Use charts only where they improve understanding.
+
+Do not overload the dashboard with excessive analytics.
+
+---
+
+# 21. ADMIN — USER MANAGEMENT
+
+Create a professional data management interface.
+
+Components:
+
+* page title
+* Add User button
+* search
+* filters
+* table
+* pagination
+
+Table columns:
+
+* Name
+* Identifier
+* Email
+* Role
+* Status
+* Face Enrollment
+* Created At
+* Actions
+
+Actions:
+
+* View
+* Edit
+* Activate
+* Deactivate
+
+Create modal/form for adding and editing users.
+
+---
+
+# 22. ADMIN — PRACTICAL SESSION MANAGEMENT
+
+Create session management.
+
+Table columns:
+
+* Session Code
+* Session Name
+* Course
+* Date
+* Start
+* End
+* Laboratory
+* Status
+* Actions
+
+Actions:
+
+* View
+* Edit
+* Change Status
+
+Create form:
+
+* session code
+* title
+* course
+* laboratory
+* date
+* start time
+* end time
+* status
+
+Status options:
+
+* Draft
+* Active
+* Closed
+* Cancelled
+
+---
+
+# 23. ADMIN — ATTENDANCE MONITORING
+
+Create attendance monitoring interface.
+
+Include:
+
+* date filter
+* session filter
+* student search
+* attendance status filter
+
+Table:
+
+* Student
+* Session
+* Check-in
+* Check-out
+* Verification Status
+* Attendance Status
+
+Use clear status badges.
+
+The page should make it easy to identify:
+
+* students who have attended
+* students who have not attended
+* verification failures
+* incomplete attendance
+
+---
+
+# 24. ADMIN — ASSET MANAGEMENT
+
+Create the primary asset management interface.
+
+Dashboard summary:
+
+* Total Assets
+* Available
+* Allocated
+* Maintenance
+* Retired
+
+Asset table:
+
+* Asset Code
+* Asset Name
+* Category
+* Brand
+* Model
+* Serial Number
+* Location
+* Status
+* Actions
+
+Actions:
+
+* View
+* Edit
+* Delete/deactivate where allowed
+* View History
+* Create Maintenance
+
+Create asset form:
+
+* asset code
+* asset name
+* category
+* brand
+* model
+* serial number
+* specification
+* location
+* status
+* notes
+
+---
+
+# 25. ADMIN — ASSET DETAIL
+
+Create an asset detail page.
+
+Header:
+
+* Asset Code
+* Asset Name
+* Status
+
+Information sections:
+
+### General Information
+
+### Technical Specification
+
+### Current Allocation
+
+### Usage History
+
+### Maintenance History
+
+Use tabs if needed:
+
+* Overview
+* Allocation History
+* Maintenance History
+* Audit/Activity
+
+Example asset:
+
+Dell Latitude 5490 Core i7
+LAB-LT-007
+
+---
+
+# 26. ADMIN — ASSET ALLOCATION
+
+Create asset allocation workflow.
+
+Primary layout should make the relationship clear:
+
+Student + Session + Asset.
+
+Allocation form:
+
+* student
+* session
+* asset
+* allocation date/time
+* condition before
+* notes
+
+Before submitting, display an allocation summary.
+
+Example:
+
+Student:
+[Student Name]
+
+Session:
+[Session Name]
+
+Asset:
+LAB-LT-007
+
+Condition:
+Good
+
+CTA:
+
+"Allocate Asset"
+
+If the asset is unavailable:
+
+show clear warning:
+
+"Asset tidak tersedia untuk dialokasikan."
+
+---
+
+# 27. ADMIN — ASSET RETURN
+
+Create return workflow.
+
+Show:
+
+* student
+* session
+* asset
+* allocation time
+* condition before
+
+Input:
+
+* condition after
+* notes
+
+Actions:
+
+* Return Asset
+* Cancel
+
+After return, show resulting asset status:
+
+Available
+
+or
+
+Maintenance
+
+depending on condition.
+
+---
+
+# 28. ADMIN — MAINTENANCE
+
+Create maintenance management page.
+
+Summary cards:
+
+* Open
+* In Progress
+* Completed
+
+Table:
+
+* Asset Code
+* Asset Name
+* Issue
+* Priority
+* Status
+* Reported At
+* Completed At
+* Actions
+
+Maintenance form:
+
+* asset
+* issue type
+* description
+* priority
+* status
+* resolution
+
+Statuses:
+
+* Open
+* In Progress
+* Completed
+* Cancelled
+
+Priorities:
+
+* Low
+* Medium
+* High
+
+Asset in maintenance must clearly appear unavailable for allocation.
+
+---
+
+# 29. ADMIN — REPORTS
+
+Create a report module.
+
+Report categories:
+
+* Attendance Report
+* Asset Report
+* Allocation Report
+* Maintenance Report
+
+Common report controls:
+
+* date range
+* status
+* session
+* asset
+* student where applicable
+* search
+* reset filter
+* export CSV
+
+Report layout:
+
+* filter bar
+* summary metrics
+* table
+* pagination
+* export button
+
+Keep report interface professional and print-friendly.
+
+---
+
+# 30. ADMIN — AUDIT LOG
+
+Create an audit log page.
+
+Table:
+
+* Timestamp
+* User
+* Action
+* Entity
+* Status
+* IP/Device information where appropriate
+* Detail
+
+Example actions:
+
+* Login
+* Face Enrollment
+* Face Verification
+* Attendance Created
+* Asset Created
+* Allocation Created
+* Asset Returned
+* Maintenance Created
+
+Sensitive information must not be shown.
+
+Do not display passwords, tokens, raw images, or biometric embeddings.
+
+---
+
+# 31. IMPORTANT UI STATES
+
+Every important screen must have realistic state designs.
+
+Create at least:
+
+## Loading State
+
+Show skeletons or appropriate loading indicators.
+
+## Empty State
+
+Examples:
+
+"No attendance records found."
+
+"No assets are currently assigned."
+
+"No maintenance records found."
+
+## Error State
+
+Use concise and understandable language.
+
+## Success State
+
+Show clear confirmation.
+
+## Disabled State
+
+Buttons and controls should indicate when actions are unavailable.
+
+## Permission State
+
+For camera:
+
+"Camera permission is required for face verification."
+
+## Verification Failure
+
+"Verifikasi wajah gagal. Pastikan wajah terlihat jelas dan coba lagi."
+
+## Multiple Face
+
+"Pastikan hanya satu wajah berada di depan kamera."
+
+## No Face
+
+"Wajah belum terdeteksi."
+
+## Session Closed
+
+"Presensi tidak dapat dilakukan karena sesi telah ditutup."
+
+## Duplicate Attendance
+
+"Presensi untuk sesi ini sudah tercatat."
+
+## Asset Unavailable
+
+"Aset sedang digunakan atau dalam maintenance."
+
+---
+
+# 32. IMPORTANT UX RULES
+
+The UX must make business rules understandable without exposing technical backend details.
+
+Examples:
+
+Instead of:
+
+"API returned HTTP 409."
+
+Show:
+
+"Aset tidak dapat dialokasikan karena sedang digunakan."
+
+Instead of:
+
+"Embedding similarity below threshold."
+
+Show:
+
+"Verifikasi wajah gagal. Silakan coba kembali dengan posisi wajah yang lebih jelas."
+
+Instead of:
+
+"Database constraint violation."
+
+Show:
+
+"Data sudah tercatat sebelumnya."
+
+Use Indonesian for all user-facing interface text.
+
+The UI language must be formal, concise, and suitable for an academic institution.
+
+---
+
+# 33. FACE VERIFICATION UX RULES
+
+The face verification experience must be designed carefully because it is the key interaction of the student application.
+
+The process must feel:
+
+* trustworthy
+* simple
+* transparent
+* private
+* fast
+
+Show the user:
+
+1. Why camera access is needed.
+2. That the process verifies the logged-in account.
+3. That the camera is active.
+4. Whether a face is detected.
+5. Whether verification is in progress.
+6. Whether verification succeeds or fails.
+
+Do not show:
+
+* raw embedding
+* threshold number
+* model internals
+* technical similarity values
+
+Do not imply absolute security.
+
+Do not claim:
+
+"100% secure"
+
+"Cannot be cheated"
+
+"Guaranteed anti-cheating"
+
+Use language such as:
+
+"Verifikasi wajah digunakan untuk membantu memastikan kesesuaian identitas pengguna yang sedang login."
+
+---
+
+# 34. DATA TABLE UX
+
+All admin tables must support:
+
+* readable column hierarchy
+* sorting where useful
+* filtering
+* search
+* pagination
+* row actions
+* status badges
+* empty state
+* loading state
+* error state
+
+Avoid overly dense tables.
+
+Use sticky table header if appropriate.
+
+Make primary information visually dominant.
+
+---
+
+# 35. FORM UX
+
+Forms must have:
+
+* clear labels
+* helper text where needed
+* required field indicator
+* validation message
+* disabled state
+* loading state
+* success state
+
+Do not rely on placeholder text as the only label.
+
+Use confirmation dialogs for destructive actions.
+
+---
+
+# 36. MODAL UX
+
+Use modals for:
+
+* confirmation
+* quick create/edit
+* destructive actions
+* asset allocation confirmation
+* asset return confirmation
+
+Do not put extremely complex forms into tiny modal dialogs.
+
+Use dedicated pages for complex workflows.
+
+---
+
+# 37. RESPONSIVE BEHAVIOR
+
+Although this is a web-only, desktop-first product, layouts should be structurally responsive.
+
+Primary target:
+
+* Desktop
+* Laptop
+
+Secondary behavior:
+
+* tablet-compatible layout
+
+Do not design a mobile app.
+
+Do not create a separate mobile navigation architecture.
+
+---
+
+# 38. ACCESSIBILITY
+
+Design should consider:
+
+* sufficient contrast
+* readable font sizes
+* keyboard navigation
+* visible focus states
+* semantic labels
+* status not communicated only through color
+* accessible form errors
+* accessible buttons
+
+Camera verification instructions must remain readable.
+
+---
+
+# 39. COMPONENT LIBRARY
+
+Create reusable components:
+
+* Button
+* Icon Button
+* Input
+* Select
+* Date Picker
+* Time Picker
+* Search Field
+* Filter
+* Badge
+* Alert
+* Toast
+* Modal
+* Confirmation Dialog
+* Card
+* Data Table
+* Pagination
+* Tabs
+* Breadcrumb
+* Sidebar
+* Topbar
+* Avatar
+* Dropdown
+* Empty State
+* Loading Skeleton
+* Status Indicator
+* Camera Frame
+* Verification Status
+* Step Indicator
+* Timeline
+
+Components must have states:
+
+* default
+* hover
+* focus
+* active
+* disabled
+* loading
+* error
+* success where applicable
+
+---
+
+# 40. DESIGN HIERARCHY
+
+Prioritize information hierarchy.
+
+For Student Web:
+
+1. Current practical session
+2. Attendance status
+3. Face verification
+4. Current asset
+5. History
+
+For Admin Web:
+
+1. Operational summary
+2. Attendance
+3. Asset availability
+4. Allocation
+5. Maintenance
+6. Reports
+
+---
+
+# 41. COMPLETE PAGE INVENTORY
+
+## Student Web
+
+Create all of the following:
+
+1. Login
+2. Dashboard
+3. Practical Sessions
+4. Session Detail
+5. Face Enrollment
+6. Face Enrollment Success
+7. Face Verification
+8. Face Verification Failed
+9. Camera Permission Error
+10. Attendance Success
+11. Attendance Detail
+12. Check-out Confirmation
+13. Check-out Success
+14. Attendance History
+15. My Assets
+16. Asset Detail
+17. Asset History
+18. Profile
+
+## Admin Web
+
+Create all of the following:
+
+1. Login
+2. Dashboard
+3. User Management
+4. Add User
+5. Edit User
+6. User Detail
+7. Session Management
+8. Add Session
+9. Edit Session
+10. Session Detail
+11. Attendance Monitoring
+12. Attendance Detail
+13. Asset Management
+14. Add Asset
+15. Edit Asset
+16. Asset Detail
+17. Allocation Management
+18. Create Allocation
+19. Allocation Detail
+20. Asset Return
+21. Maintenance Management
+22. Create Maintenance
+23. Maintenance Detail
+24. Reports
+25. Attendance Report
+26. Asset Report
+27. Maintenance Report
+28. Audit Log
+29. Admin Profile
+
+---
+
+# 42. PRIMARY USER FLOWS
+
+## Student Attendance Flow
+
+```text
+Login
+↓
+Dashboard
+↓
+Active Practical Session
+↓
+Start Attendance
+↓
+Camera Permission
+↓
+Camera Preview
+↓
+Face Detected
+↓
+Face Verification
+↓
+Verification Success
+↓
+Attendance Check-in
+↓
+Attendance Success
+```
+
+## Student Check-out Flow
+
+```text
+Dashboard
+↓
+Current Attendance
+↓
+Check-out
+↓
+Confirmation
+↓
+Check-out Success
+```
+
+## Asset Allocation Flow
+
+```text
+Admin Login
+↓
+Dashboard
+↓
+Allocations
+↓
+Create Allocation
+↓
+Select Student
+↓
+Select Session
+↓
+Select Available Asset
+↓
+Review Allocation
+↓
+Confirm
+↓
+Success
+```
+
+## Asset Return Flow
+
+```text
+Allocation Detail
+↓
+Return Asset
+↓
+Condition After
+↓
+Confirmation
+↓
+Return Success
+↓
+Asset Status Updated
+```
+
+## Maintenance Flow
+
+```text
+Assets
+↓
+Asset Detail
+↓
+Create Maintenance
+↓
+Issue Information
+↓
+Maintenance Created
+↓
+Asset Status = Maintenance
+↓
+Complete Maintenance
+↓
+Asset Status = Available / Retired
+```
+
+---
+
+# 43. PROTOTYPE REQUIREMENTS
+
+Create an interactive prototype for the most important flows.
+
+At minimum:
+
+### Prototype 1 — Student Attendance
+
+Login → Dashboard → Active Session → Face Verification → Verification Success → Attendance Success
+
+### Prototype 2 — Student Verification Failure
+
+Login → Active Session → Camera → Verification Failed → Retry
+
+### Prototype 3 — Admin Asset Allocation
+
+Admin Login → Dashboard → Assets/Allocations → Create Allocation → Select Student → Select Session → Select Asset → Confirmation → Success
+
+### Prototype 4 — Asset Maintenance
+
+Admin → Asset Detail → Create Maintenance → Maintenance Status → Complete Maintenance → Asset Available
+
+Prototype transitions should feel realistic.
+
+---
+
+# 44. SAMPLE DATA
+
+Use realistic fictional sample data for UI demonstration.
+
+Students:
+
+* Ahmad Fauzan
+* Siti Rahma
+* Muhammad Rizky
+* Nabila Putri
+
+Example student identifier:
+
+TI240001
+
+Example sessions:
+
+* Praktikum Pemrograman Web
+* Praktikum Basis Data
+* Praktikum Jaringan Komputer
+
+Example room:
+
+* Lab Komputer 1
+* Lab Komputer 2
+
+Example asset:
+
+Dell Latitude 5490 Core i7
+Asset Code: LAB-LT-007
+
+Asset statuses:
+
+* Available
+* Allocated
+* Maintenance
+* Retired
+
+All sample data must clearly function as fictional interface content, not official institutional data.
+
+---
+
+# 45. FINAL VISUAL QUALITY REQUIREMENT
+
+The final result must look like a coherent product designed by a professional UI/UX designer.
+
+Do not produce:
+
+* unrelated page styles
+* inconsistent spacing
+* inconsistent typography
+* random colors
+* random icons
+* generic placeholder dashboards
+* excessive decorative illustrations
+* unnecessary gradients
+* inconsistent navigation
+
+Both applications must share the same design system while maintaining different role-specific navigation and information architecture.
+
+---
+
+# 46. FINAL OUTPUT STRUCTURE
+
+Generate the UI/UX design in this structure:
+
+## Design System
+
+Components, typography, colors, spacing, status, buttons, forms, tables.
+
+## Student Web
+
+All required student screens.
+
+## Admin Web
+
+All required admin screens.
+
+## Interactive Prototype
+
+Complete primary flows.
+
+## Component States
+
+Loading, empty, error, success, disabled, permission, verification states.
+
+## Responsive Behavior
+
+Desktop-first responsive rules.
+
+---
+
+# 47. IMPORTANT PRODUCT CONSTRAINTS
+
+These constraints are mandatory:
+
+* Web-only.
+* Two web applications.
+* Student and Admin are separate user experiences.
+* REST API is the backend communication layer.
+* No direct database access from frontend.
+* Face verification uses 1:1 verification.
+* Student must login before face verification.
+* Face verification happens through browser camera.
+* No QR Code as primary attendance.
+* No 1:N face identification.
+* No mobile application.
+* No IoT.
+* No RFID.
+* No hardware scanner.
+* No advanced AI dashboard.
+* No training face recognition model from scratch.
+* Use a pretrained face model conceptually.
+* Do not expose biometric embedding or technical face model information in the UI.
+* Do not claim biometric verification is 100% secure.
+* The system is designed to reduce the potential for attendance abuse or proxy attendance.
+
+---
+
+# 48. FINAL DESIGN OBJECTIVE
+
+Produce a complete, coherent, modern, professional UI/UX system for:
+
+"RANCANG BANGUN WEB SERVICE PRESENSI DAN MANAJEMEN ASET LABORATORIUM KOMPUTER MENGGUNAKAN METODE AGILE"
+
+The result must be suitable for:
+
+* academic project presentation
+* frontend implementation
+* usability demonstration
+* prototype demonstration
+* final project documentation
+* poster screenshots
+* project defense/presentation
+
+The UI must clearly communicate the relationship between:
+
+Student Identity
+↓
+Practical Session
+↓
+Face Verification
+↓
+Attendance
+↓
+Asset Allocation
+↓
+Asset Usage History
+↓
+Maintenance
+↓
+Reporting
+
+Create the experience as a real operational web application, not merely a visual mockup.
