@@ -1,4 +1,4 @@
-# PRODUCT REQUIREMENT DOCUMENT (PRD)
+op# PRODUCT REQUIREMENT DOCUMENT (PRD)
 
 ## RANCANG BANGUN WEB SERVICE PRESENSI DAN MANAJEMEN ASET LABORATORIUM KOMPUTER MENGGUNAKAN METODE AGILE
 
@@ -1381,7 +1381,7 @@ Presentation Layer terdiri dari:
 1. Web Mahasiswa/User.
 2. Web Admin/Laboran/Tata Usaha.
 
-Frontend menggunakan HTML, CSS, dan JavaScript modular. Frontend tidak memiliki kredensial database.
+Frontend menggunakan React 19 dengan TypeScript, Vite 8 sebagai build tool, dan Tailwind CSS v4 sebagai utility-first CSS framework. Frontend tidak memiliki kredensial database.
 
 Frontend hanya berkomunikasi dengan endpoint REST API melalui HTTP/HTTPS.
 
@@ -1429,7 +1429,7 @@ Layer ini menggunakan pretrained model.
 
 ## 8.5 Data Access Layer
 
-Data Access Layer mengelola komunikasi backend dengan PostgreSQL.
+Data Access Layer mengelola komunikasi backend Go dengan PostgreSQL (Supabase).
 
 Tanggung jawab:
 
@@ -1442,7 +1442,7 @@ Tanggung jawab:
 
 ## 8.6 Database Layer
 
-Database menggunakan PostgreSQL sebagai penyimpanan:
+Database menggunakan PostgreSQL (Supabase) sebagai penyimpanan:
 
 * user;
 * role;
@@ -2031,7 +2031,7 @@ Dokumentasi API terdiri dari:
 
 Development:
 
-`http://localhost:8000`
+`http://localhost:3000`
 
 Production:
 
@@ -2180,9 +2180,8 @@ Data internal seperti embedding tidak dikembalikan.
 Dokumentasi API menggunakan OpenAPI. Backend menyediakan endpoint dokumentasi:
 
 ```text
-/docs
-/openapi.json
-/redoc
+/swagger
+/api/v1/openapi.json
 ```
 
 Dokumentasi menjadi salah satu luaran utama proyek karena menunjukkan seluruh kontrak antara frontend dan backend.
@@ -2689,20 +2688,30 @@ Antarmuka harus:
 
 Backend harus dipisahkan berdasarkan domain/service.
 
-Struktur konseptual:
+Struktur konseptual backend Go:
 
 ```text
-app/
-├── api/
-├── core/
-├── models/
-├── schemas/
-├── repositories/
-├── services/
+cmd/
+├── server/
+│   └── main.go
+internal/
+├── handler/
 ├── middleware/
-├── face/
-├── tests/
-└── main.py
+├── model/
+├── repository/
+├── service/
+├── config/
+└── router/
+```
+
+Struktur konseptual microservice face verification (Python):
+
+```text
+face_service/
+├── main.py
+├── routes/
+├── services/
+└── requirements.txt
 ```
 
 ## 17.6 Scalability
@@ -2948,23 +2957,31 @@ Sistem dianggap memenuhi acceptance criteria apabila:
 | Kelebihan    | Sederhana, ringan, dependency sedikit, mudah dipahami |
 | Kekurangan   | Struktur komponen dan state management harus disiplin |
 | Kompleksitas | Rendah                                                |
-| Cocok untuk  | Proyek dua mahasiswa dan Web API-based application    |
-| Keputusan    | **FINAL**                                             |
+| Keputusan    | Tidak dipilih                                         |
 
-### Alternatif B — React
+### Alternatif B — React + Vite + Tailwind CSS
 
-| Aspek        | Penilaian                                           |
-| ------------ | --------------------------------------------------- |
-| Kelebihan    | Component-based, state management lebih terstruktur |
-| Kekurangan   | Dependency dan build tooling lebih banyak           |
-| Kompleksitas | Sedang                                              |
-| Keputusan    | Tidak dipilih untuk MVP                             |
+| Aspek        | Penilaian                                                                      |
+| ------------ | ------------------------------------------------------------------------------ |
+| Kelebihan    | Component-based, state management terstruktur, hot reload, utility-first CSS   |
+| Kekurangan   | Dependency dan build tooling lebih banyak                                      |
+| Kompleksitas | Sedang                                                                         |
+| Keputusan    | **FINAL**                                                                      |
 
-**Keputusan final frontend:** **HTML5 + CSS3 + JavaScript ES Modules + Fetch API**.
+**Keputusan final frontend:** **React 19 + TypeScript + Vite 8 + Tailwind CSS v4**.
 
-Alasan keputusan adalah kebutuhan frontend cukup terstruktur tetapi tidak membutuhkan kompleksitas state management yang tinggi. Dua aplikasi web dapat dipisahkan secara folder/build tanpa menambah framework besar.
+Alasan keputusan adalah kebutuhan frontend memiliki banyak komponen interaktif (face capture, dashboard, tabel data, form kompleks) yang lebih efisien dikelola menggunakan component-based architecture dengan state management React. Tailwind CSS v4 menyediakan utility-first styling yang konsisten. TypeScript memberikan type safety pada integrasi API.
 
 ## 21.2 Backend
+
+### Go + Fiber
+
+| Aspek        | Penilaian                                                                           |
+| ------------ | ----------------------------------------------------------------------------------- |
+| Kelebihan    | Performa tinggi, compiled binary, type-safe, concurrency bawaan, dependency minimal |
+| Kekurangan   | Face verification library (DeepFace) tidak tersedia di Go                           |
+| Kompleksitas | Sedang                                                                              |
+| Keputusan    | **FINAL** (backend utama)                                                           |
 
 ### FastAPI
 
@@ -2973,7 +2990,7 @@ Alasan keputusan adalah kebutuhan frontend cukup terstruktur tetapi tidak membut
 | Kelebihan    | Python, cocok untuk API, type hints, validation, integrasi library AI/face |
 | Kekurangan   | Struktur aplikasi perlu dirancang sendiri                                  |
 | Kompleksitas | Sedang                                                                     |
-| Keputusan    | **FINAL**                                                                  |
+| Keputusan    | **FINAL** (microservice face verification)                                 |
 
 ### Flask
 
@@ -3002,9 +3019,9 @@ Alasan keputusan adalah kebutuhan frontend cukup terstruktur tetapi tidak membut
 | Kompleksitas | Sedang–tinggi untuk proyek ini                             |
 | Keputusan    | Tidak dipilih                                              |
 
-**Keputusan final backend:** **FastAPI + Python**.
+**Keputusan final backend:** **Go + Fiber sebagai backend utama + Python FastAPI sebagai microservice face verification**.
 
-FastAPI dipilih karena satu runtime Python dapat menangani REST API sekaligus integrasi face verification.
+Go + Fiber dipilih sebagai backend utama untuk menangani seluruh REST API (auth, CRUD, business logic) karena performa tinggi dan type safety. Python FastAPI digunakan sebagai microservice terpisah khusus face verification karena DeepFace merupakan library Python. Arsitektur microservice ini memisahkan concern face verification dari business logic utama.
 
 ## 21.3 Database
 
@@ -3026,7 +3043,9 @@ FastAPI dipilih karena satu runtime Python dapat menangani REST API sekaligus in
 | Kompleksitas | Sedang                                                                       |
 | Keputusan    | Tidak dipilih                                                                |
 
-**Keputusan final database:** **PostgreSQL**.
+**Keputusan final database:** **PostgreSQL (Supabase)**.
+
+Database menggunakan Supabase sebagai managed PostgreSQL. Supabase menyediakan PostgreSQL standar yang dapat diakses menggunakan connection string biasa dari backend Go maupun microservice Python. Supabase Storage digunakan untuk penyimpanan file foto wajah.
 
 ## 21.4 Face Verification
 
@@ -3078,13 +3097,15 @@ Branching final dapat disederhanakan jika workload dua mahasiswa membutuhkan wor
 
 ## 21.7 Deployment
 
-**Platform final:** Render atau layanan PaaS setara yang mendukung FastAPI dan PostgreSQL.
+**Platform final:** Railway, Render, atau layanan PaaS setara yang mendukung Go, Python, dan static hosting.
 
 Komponen:
 
-* Static Web Site untuk frontend;
-* Web Service untuk FastAPI;
-* PostgreSQL managed database.
+* Static Web Site untuk frontend React;
+* Web Service untuk Go + Fiber (backend utama);
+* Web Service untuk Python FastAPI (microservice face verification);
+* Supabase managed PostgreSQL database;
+* Supabase Storage untuk file foto wajah.
 
 Nama environment production:
 
@@ -3120,14 +3141,15 @@ Deployment platform dipilih berdasarkan kemudahan deployment mahasiswa dan kemam
                        │
                        ▼
                 ┌──────────────┐
-                │   FastAPI    │
+                │  Go + Fiber  │
                 │   Backend    │
                 └──────┬───────┘
                        │
           ┌────────────┼─────────────┐
           │            │             │
           ▼            ▼             ▼
-   Face Verification  Services   PostgreSQL
+   Python FastAPI   Services    Supabase
+   Face Service                 PostgreSQL
           │
           ▼
    Pretrained Model
@@ -3142,20 +3164,24 @@ Web Admin
     ↓
 REST API
     ↓
-FastAPI Backend
+Go + Fiber Backend
     ↓
-PostgreSQL
+Supabase PostgreSQL
 ```
 
 ## 22.2 Lokasi Komponen
 
-**Frontend:** Static web hosting/PaaS.
+**Frontend:** Static web hosting/PaaS (React build output).
 
-**Backend:** FastAPI Web Service.
+**Backend:** Go + Fiber Web Service.
 
-**Face Model:** Berjalan pada server backend sebagai local dependency/model artifact.
+**Face Verification:** Python FastAPI microservice (internal, tidak diakses langsung oleh frontend).
 
-**Database:** Managed PostgreSQL.
+**Face Model:** Berjalan pada server microservice Python sebagai local dependency/model artifact.
+
+**Database:** Supabase managed PostgreSQL.
+
+**Storage:** Supabase Storage untuk file foto wajah.
 
 **Source Code:** GitHub.
 
@@ -3281,7 +3307,8 @@ Proyek dinilai **feasible untuk dikerjakan sebagai proyek satu semester oleh dua
 
 **Yang dihasilkan:**
 
-* FastAPI backend;
+* Go + Fiber backend;
+* Python FastAPI microservice face verification;
 * REST API;
 * OpenAPI schema;
 * Swagger UI;
@@ -3456,8 +3483,9 @@ Metodologi mencakup:
 
 Implementasi membahas:
 
-1. Database PostgreSQL.
-2. FastAPI.
+1. Database PostgreSQL (Supabase).
+2. Go + Fiber backend.
+3. Python FastAPI face verification microservice.
 3. Authentication.
 4. User management.
 5. Face enrollment.
@@ -3561,7 +3589,7 @@ Membahas:
 
 Membahas:
 
-* setup FastAPI;
+* setup Go + Fiber;
 * project structure;
 * routing;
 * schema;
@@ -3740,10 +3768,10 @@ Maintenance
 
 ```text
 Web Mahasiswa ─┐
-               ├── REST API ── Backend ── PostgreSQL
+               ├── REST API ── Go+Fiber Backend ── Supabase PostgreSQL
 Web Admin ─────┘
                     │
-                    └── Face Verification Service
+                    └── Python FastAPI Face Verification Service
 ```
 
 ## 27.6 Face Verification Flow
@@ -3796,12 +3824,12 @@ Available / Maintenance
 
 ## 27.9 Teknologi
 
-* HTML5
-* CSS3
-* JavaScript
-* FastAPI
-* Python
-* PostgreSQL
+* React 19
+* TypeScript
+* Tailwind CSS v4
+* Go + Fiber
+* Python FastAPI
+* Supabase PostgreSQL
 * DeepFace
 * Pretrained face model
 * Swagger/OpenAPI
@@ -3849,7 +3877,7 @@ Available / Maintenance
 │ → Similarity → Result │ → Database                      │
 ├───────────────────────┼─────────────────────────────────┤
 │ ASSET FLOW            │ TEKNOLOGI                       │
-│ Register → Allocate   │ FastAPI, PostgreSQL, JS,        │
+│ Register → Allocate   │ Go+Fiber, React, Supabase,      │
 │ → Return → Maintenance│ DeepFace, OpenAPI               │
 ├───────────────────────┴─────────────────────────────────┤
 │              HASIL YANG DITARGETKAN                     │
@@ -3878,7 +3906,7 @@ Produk adalah sistem web terintegrasi untuk presensi dan manajemen aset laborato
 
 ## 28.3 Backend
 
-**FastAPI + Python** sebagai backend service.
+**Go + Fiber** sebagai backend service utama. **Python FastAPI** sebagai microservice face verification.
 
 ## 28.4 REST API
 
@@ -3890,7 +3918,7 @@ Base path:
 
 ## 28.5 Database
 
-**PostgreSQL**
+**PostgreSQL (Supabase)**
 
 Tabel inti:
 
@@ -4208,7 +4236,7 @@ Antarmuka dokumentasi interaktif untuk API berbasis OpenAPI.
 
 # DOKUMEN PENUTUP
 
-Sistem **RANCANG BANGUN WEB SERVICE PRESENSI DAN MANAJEMEN ASET LABORATORIUM KOMPUTER MENGGUNAKAN METODE AGILE** ditetapkan sebagai sistem berbasis web yang terdiri atas Web Mahasiswa/User dan Web Admin/Laboran/Tata Usaha, dengan RESTful Web Service sebagai pusat komunikasi antara frontend dan PostgreSQL database.
+Sistem **RANCANG BANGUN WEB SERVICE PRESENSI DAN MANAJEMEN ASET LABORATORIUM KOMPUTER MENGGUNAKAN METODE AGILE** ditetapkan sebagai sistem berbasis web yang terdiri atas Web Mahasiswa/User dan Web Admin/Laboran/Tata Usaha, dengan RESTful Web Service sebagai pusat komunikasi antara frontend React dan Supabase PostgreSQL database.
 
 Presensi menggunakan **face verification 1:1 melalui kamera browser**, dengan mahasiswa melakukan login terlebih dahulu sehingga sistem telah mengetahui identitas pengguna. Face verification menggunakan pretrained face model untuk menghasilkan embedding, sedangkan backend bertanggung jawab terhadap enrollment, penyimpanan template, verification, threshold, dan integrasi terhadap attendance.
 

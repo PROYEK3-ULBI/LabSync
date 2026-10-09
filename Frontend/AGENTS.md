@@ -1,35 +1,53 @@
-# figma-make-app
+# Frontend
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+React 19 + Vite 8 + Tailwind CSS v4 prototype.
 
-## Development Server
+## Commands
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
+Run from `Frontend/`:
 
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+```bash
+pnpm dev       # Vite dev server on port 8443
+pnpm build     # production build
+pnpm preview   # serve production build
+pnpm format    # oxfmt formatter
+```
 
-## Project Structure
+## Toolchain
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
+- Node 22, pnpm 10.34.3 (pinned in `.mise.toml`)
+- Both `pnpm-lock.yaml` and `package-lock.json` exist — use **pnpm**
+- No ESLint, no Prettier, no test framework configured
+- No CI/CD
 
-- `src/main.tsx` - React entrypoint; imports `src/index.css` and mounts `src/App.tsx` into the `#root` element
-- `src/App.tsx` - Primary application component and the usual starting point for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
-- `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+## Path alias
 
-## Dependencies
+`@/*` → `./src/*` (configured in both `tsconfig.json` and `vite.config.ts`)
 
-- Runtime: React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
+## Key files
+
+- `src/main.tsx` — React entrypoint, mounts `App.tsx`
+- `src/App.tsx` — root component: auth state + role (`student`/`admin`) drives which app renders
+- `src/apps/AdminApp.tsx` — admin dashboard (all screens inlined, ~1155 lines)
+- `src/apps/StudentApp.tsx` — student dashboard (all screens inlined, ~674 lines)
+- `src/components/ui.tsx` — full design system (Button, Badge, Card, Table, Modal, Toast, etc.)
+- `src/components/FaceFlow.tsx` — simulated face capture (no real biometric)
+- `src/components/Login.tsx` — demo login (password "salah" = error, anything else = success)
+- `src/lib/data.ts` — all mock/fixture data
+- `src/index.css` — global styles + Tailwind v4 theme (fonts: Inter, IBM Plex Sans, JetBrains Mono)
+
+## Architecture notes
+
+- **No router** — navigation is state-based via string keys, no react-router
+- **No API calls** — everything uses hardcoded mock data from `src/lib/data.ts`
+- `src/pages/` directory exists (Dashboard, Attendance, Assets, Kiosk) but is **unused** — the `src/apps/` files contain all active screens
+- `FaceFlow` component fakes camera capture with SVG silhouette animation
 
 ## Styling
 
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss';`. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
+Tailwind CSS v4 via `@tailwindcss/vite` plugin. No `tailwind.config.*` or PostCSS config needed. Theme customization goes in `src/index.css` after the `@import 'tailwindcss'` line.
 
-`src/main.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
+## Conventions
+
+- All UI text: Bahasa Indonesia
+- Use Tailwind utility classes in JSX; global/theme CSS in `src/index.css`
