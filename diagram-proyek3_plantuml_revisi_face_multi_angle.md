@@ -18,7 +18,7 @@ Alternatif resmi: **https://www.plantuml.com/plantuml/uml/** — fungsinya sama,
 
 ## 1. ERD Database
 
-Sembilan tabel inti beserta relasinya (PRD Part 10).
+Sepuluh tabel sesuai migration `database/migrations/000001_init_schema.up.sql`.
 
 ```plantuml
 @startuml
@@ -34,8 +34,11 @@ entity USERS {
   role_id : uuid <<FK>>
   identifier : string
   email : string
+  full_name : string
   password_hash : string
   status : string
+  created_at : timestamp
+  updated_at : timestamp
 }
 entity FACE_TEMPLATES {
   * id : uuid <<PK>>
@@ -43,18 +46,34 @@ entity FACE_TEMPLATES {
   user_id : uuid <<FK>>
   model_name : string
   model_version : string
-  embedding_ciphertext : bytea
+  consent_version : string
+  consented_at : timestamp
   status : string
+  enrolled_at : timestamp
+  updated_at : timestamp
 }
+entity FACE_TEMPLATE_SAMPLES {
+  * id : uuid <<PK>>
+  --
+  face_template_id : uuid <<FK>>
+  pose : string
+  embedding_ciphertext : bytea
+  quality_status : string
+  created_at : timestamp
+}
+
 entity LAB_SESSIONS {
   * id : uuid <<PK>>
   --
   code : string
   title : string
+  course_code : string
+  location : string
   session_date : date
   start_at : timestamp
   end_at : timestamp
   status : string
+  created_by : uuid <<FK>>
 }
 entity ATTENDANCE {
   * id : uuid <<PK>>
@@ -70,6 +89,9 @@ entity ASSETS {
   --
   asset_code : string
   asset_name : string
+  category : string
+  serial_number : string
+  location : string
   status : string
 }
 entity ASSET_ALLOCATIONS {
@@ -80,14 +102,20 @@ entity ASSET_ALLOCATIONS {
   session_id : uuid <<FK>>
   allocated_at : timestamp
   returned_at : timestamp
+  condition_before : string
+  condition_after : string
 }
 entity MAINTENANCE {
   * id : uuid <<PK>>
   --
   asset_id : uuid <<FK>>
   reported_by : uuid <<FK>>
+  issue_type : string
+  description : text
   status : string
   priority : string
+  started_at : timestamp
+  completed_at : timestamp
 }
 entity AUDIT_LOGS {
   * id : uuid <<PK>>
@@ -95,10 +123,14 @@ entity AUDIT_LOGS {
   user_id : uuid <<FK>>
   action : string
   entity_type : string
+  entity_id : uuid
+  status : string
+  metadata : jsonb
 }
 
 ROLES ||--o{ USERS : has
-USERS ||--o| FACE_TEMPLATES : owns
+USERS ||--o{ FACE_TEMPLATES : owns
+FACE_TEMPLATES ||--o{ FACE_TEMPLATE_SAMPLES : contains
 USERS ||--o{ ATTENDANCE : records
 LAB_SESSIONS ||--o{ ATTENDANCE : contains
 USERS ||--o{ ASSET_ALLOCATIONS : allocated
@@ -113,72 +145,90 @@ USERS ||--o{ LAB_SESSIONS : creates
 
 ---
 
-## 2. Sequence Diagram — Face Verification 1:1
-
-PRD 6.6: alur verifikasi wajah saat presensi.
+## 2. Sequence Diagram — Multi-Angle Enrollment dan Face Verification 1:1
 
 ```plantuml
 @startuml
 actor Mahasiswa as M
 participant Browser as B
-participant "REST API" as A
-participant "Face Service" as F
-database Database as D
+participant "Go REST API" as A
+participant "Python Face Service" as F
+database "Supabase PostgreSQL" as D
 
-M -> B : Buka halaman presensi
-B -> A : GET status session
-A --> B : Session valid
-B -> M : Tampilkan kamera
-M -> B : Arahkan wajah, capture frame
-B -> A : POST /face/verify (image, session_id)
-A -> F : Deteksi wajah & buat embedding
-F --> A : Embedding
-A -> D : Ambil template user login
-D --> A : Template wajah
-A -> F : Hitung similarity vs threshold
-F --> A : verified = true/false
+== Enrollment ==
+M -> B : Mulai enrollment + setuju pemberitahuan
+B -> M : Panduan pose FRONT
+M -> B : Capture FRONT
+B -> M : Panduan pose LEFT
+M -> B : Capture LEFT
+B -> M : Panduan pose RIGHT
+M -> B : Capture RIGHT
+B -> A : POST enroll dengan 3 file pose
+A -> F : Validasi dan ekstrak embedding FRONT
+F --> A : FRONT embedding + quality result
+A -> F : Validasi dan ekstrak embedding LEFT
+F --> A : LEFT embedding + quality result
+A -> F : Validasi dan ekstrak embedding RIGHT
+F --> A : RIGHT embedding + quality result
+alt Semua pose valid
+  A -> D : Transaction: simpan enrollment set + 3 encrypted samples
+  D --> A : Commit berhasil
+  A --> B : Enrollment aktif; raw images dibuang
+else Ada pose tidak valid
+  A --> B : Enrollment ditolak; minta capture ulang pose terkait
+end
+
+== Verification ==
+M -> B : Buka presensi dan pilih session
+B -> A : Request check-in dengan live frame
+A -> D : Ambil enrollment set user login
+D --> A : FRONT/LEFT/RIGHT samples
+A -> F : Ekstrak live embedding + compare 1:1
+F --> A : Decision result
 alt Verified
-  A -> D : Buat attendance (checked_in_at)
-  A --> B : 200 verified, attendance dibuat
-else Tidak verified
-  A --> B : 200 verified = false
+  A -> D : Simpan attendance dengan waktu server
+  A --> B : Verification dan check-in berhasil
+else Not verified
+  A --> B : Verification gagal; tanpa attendance
 end
 @enduml
 ```
 
----
 
 ## 3. Sequence Diagram — Attendance (Check-in & Check-out)
 
-PRD 7.3–7.5.
+Flow aktual endpoint `/api/v1/attendance/check-in` dan `/api/v1/attendance/check-out`.
 
 ```plantuml
 @startuml
 actor Mahasiswa as M
-participant "REST API" as A
-participant "Session Service" as S
-participant "Face Service" as F
-database Database as D
+participant Browser as B
+participant "Go REST API" as A
+participant "Attendance Service" as AS
+participant "Python Face Service" as F
+database "PostgreSQL" as D
 
 == Check-in ==
-M -> A : Pilih session
-A -> S : Validasi session aktif
-S --> A : Session aktif
-A -> D : Cek attendance existing
-D --> A : Belum ada
-A -> F : Jalankan face verification 1:1
-F --> A : verified = true
-A -> D : Insert attendance, checked_in_at = server time
-D --> A : Tersimpan
-A --> M : Check-in berhasil
+M -> B : Pilih session + capture wajah
+B -> A : POST /attendance/check-in (session_id + image)
+A -> AS : Validasi role STUDENT + session aktif
+AS -> D : Ambil attendance + active face template user
+D --> AS : Data sesi, attendance, 3 encrypted samples
+AS -> F : Verify 1:1 live image vs 3 samples user
+F --> AS : verified / distance / decision_rule
+alt verified
+  AS -> D : Insert attendance, checked_in_at = server time
+  A --> B : Check-in berhasil
+else not verified
+  A --> B : Verifikasi wajah gagal; attendance tidak dibuat
+end
 
 == Check-out ==
-M -> A : Check-out
-A -> D : Ambil attendance aktif
-D --> A : Ada, belum check-out
-A -> D : Set checked_out_at = server time
-D --> A : Diperbarui
-A --> M : Check-out berhasil
+M -> B : Check-out
+B -> A : POST /api/v1/attendance/check-out (session_id)
+A -> AS : Cari attendance aktif milik user
+AS -> D : Set checked_out_at = server time
+A --> B : Check-out berhasil
 @enduml
 ```
 
@@ -186,14 +236,14 @@ A --> M : Check-out berhasil
 
 ## 4. Activity Diagram — Login
 
-PRD 7.1. Ditulis sebagai activity diagram (setara flowchart di PlantUML).
+Flow aktual `/api/v1/auth/login` dengan JWT HttpOnly cookie.
 
 ```plantuml
 @startuml
 start
 :Buka halaman login;
 :Isi kredensial;
-:POST /auth/login;
+:POST /api/v1/auth/login;
 :Validasi user (cek password hash);
 if (Password benar?) then (tidak)
   :401 Unauthorized;
@@ -205,8 +255,8 @@ if (Akun aktif?) then (tidak)
   stop
 else (ya)
 endif
-:Buat access token;
-:Set httponly cookie;
+:Buat JWT;
+:Set HttpOnly cookie token;
 :Dashboard;
 stop
 @enduml
@@ -214,51 +264,54 @@ stop
 
 ---
 
-## 5. Activity Diagram — Face Enrollment
-
-PRD 7.2. Ada loop retry kalau jumlah wajah terdeteksi tidak tepat satu.
+## 5. Activity Diagram — Face Enrollment Multi-Angle
 
 ```plantuml
 @startuml
 start
-:Buka face enrollment;
+:Login dan setujui pemrosesan biometrik;
 :Request akses kamera;
 if (Izin kamera?) then (tidak)
-  :Error kamera;
+  :Tampilkan error kamera;
   stop
 else (ya)
 endif
-while (Tepat satu wajah terdeteksi?) is (tidak, ulangi)
-  :Capture citra wajah;
-endwhile (ya)
-:Face embedding (model pretrained);
-:Simpan template;
-:Enrollment berhasil;
+:Capture pose FRONT;
+:Capture pose LEFT;
+:Capture pose RIGHT;
+:POST /api/v1/face/enroll dengan 3 file;
+:Backend kirim tiap pose ke face_service internal;
+if (Semua pose valid dan 1 wajah?) then (ya)
+  :Ekstrak embedding tiap pose;
+  :Enkripsi dan simpan 3 sampel + metadata model;
+  :Buang raw image dari memori;
+  :Enrollment aktif;
+else (tidak)
+  :Tampilkan error pose/citra;
+endif
 stop
 @enduml
 ```
 
----
-
 ## 6. Component Diagram — Architecture (Layered)
 
-PRD Part 8: enam lapisan backend.
+Arsitektur aktual: React frontend memanggil Go Fiber API; Go API memanggil face_service internal.
 
 ```plantuml
 @startuml
 component "Web Mahasiswa" as WebM
 component "Web Admin" as WebA
-component "API Layer\n(routing, autentikasi, validasi)" as API
-component "Business Logic Layer\n(aturan domain & validasi bisnis)" as BLL
-component "Face Verification Layer\n(deteksi, embedding, threshold)" as FVL
-component "Data Access Layer\n(query, transaction, mapping)" as DAL
+component "Go Fiber API\n(router, middleware, handler)" as API
+component "Service Layer\n(auth, user, face, attendance, asset)" as BLL
+component "FastAPI face_service\n(DeepFace ArcFace, detector)" as FVL
+component "Repository Layer\n(pgx, transaction, mapping)" as DAL
 database "PostgreSQL Database" as DB
 
 WebM --> API
 WebA --> API
 API --> BLL
-BLL --> FVL
-FVL --> DAL
+BLL --> FVL : internal HTTP + X-Internal-API-Key
+BLL --> DAL
 DAL --> DB
 @enduml
 ```
@@ -267,7 +320,7 @@ DAL --> DB
 
 ## 7. Deployment Diagram
 
-PRD Part 22.
+Deployment target/logical runtime.
 
 ```plantuml
 @startuml
@@ -275,8 +328,8 @@ actor "Browser Mahasiswa" as BM
 actor "Browser Admin" as BA
 node "Static Web Hosting" as Hosting
 node "API Gateway (HTTPS)" as Gateway
-node "FastAPI Backend" as Backend
-node "Face Verification Service\n(pretrained model lokal)" as FaceSvc
+node "Go Fiber Backend" as Backend
+node "FastAPI Face Service\n(private, DeepFace model lokal)" as FaceSvc
 database "PostgreSQL Database\n(managed)" as DB
 
 BM --> Hosting
@@ -292,7 +345,7 @@ Backend --> DB
 
 ## 8. State Diagram — Status Asset
 
-PRD 10.7, 5.10–5.12.
+Status asset sesuai constraint database dan service allocation.
 
 ```plantuml
 @startuml
@@ -311,7 +364,7 @@ RETIRED --> [*]
 
 ## 9. State Diagram — Status Maintenance
 
-PRD 10.9.
+Status maintenance sesuai constraint database.
 
 ```plantuml
 @startuml
@@ -354,32 +407,39 @@ Project starts 2026-10-01
 
 ## 11. Class Diagram — Backend Service
 
-PRD Part 9: struktur service backend dan ketergantungannya.
+Struktur service backend aktual (ringkas).
 
 ```plantuml
 @startuml
 class AuthenticationService {
   +login()
-  +validateToken()
-  +checkRole()
+  +ValidateToken()
+  +logout()
 }
 class FaceVerificationService {
-  +enrollFace()
-  +verifyFace()
-  +computeEmbedding()
+  +Enroll()
+  +GetStatus()
+  +Revoke()
 }
 class AttendanceService {
-  +checkIn()
-  +checkOut()
+  +CheckIn()
+  +CheckOut()
+  +History()
 }
 class AssetService {
-  +allocateAsset()
-  +returnAsset()
-  +getAssetHistory()
+  +List()
+  +Create()
+  +UpdateStatus()
+}
+class AllocationService {
+  +Create()
+  +Return()
+  +AssetHistory()
 }
 class MaintenanceService {
-  +reportDamage()
-  +updateStatus()
+  +Create()
+  +Update()
+  +List()
 }
 class ReportingService {
   +generateReport()
@@ -393,7 +453,8 @@ class Repository {
 AttendanceService ..> AuthenticationService : gunakan sesi login
 AttendanceService ..> FaceVerificationService : verifikasi wajah
 AssetService ..> AuthenticationService : cek otorisasi
-MaintenanceService ..> AssetService : update status aset
+AllocationService ..> AssetService : update status aset
+MaintenanceService ..> AssetService : cek/update status aset
 ReportingService ..> AttendanceService : ambil data
 ReportingService ..> AssetService : ambil data
 ReportingService ..> MaintenanceService : ambil data
@@ -401,6 +462,7 @@ AuthenticationService --> Repository
 FaceVerificationService --> Repository
 AttendanceService --> Repository
 AssetService --> Repository
+AllocationService --> Repository
 MaintenanceService --> Repository
 @enduml
 ```
@@ -425,7 +487,8 @@ start
 |Mahasiswa|
 :Arahkan wajah, capture;
 |Sistem|
-:Face verification 1:1;
+:Ambil 3 sampel enrollment user;
+:Face verification 1:1 via face_service;
 if (Verified?) then (tidak)
   :Presensi ditolak;
   stop

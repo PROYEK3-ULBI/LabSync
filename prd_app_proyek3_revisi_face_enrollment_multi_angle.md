@@ -7,7 +7,7 @@ op# PRODUCT REQUIREMENT DOCUMENT (PRD)
 **Jumlah Anggota:** 2 mahasiswa
 **Platform:** Web-based / Web-only
 **Metode Pengembangan:** Agile
-**Versi Dokumen:** 1.0
+**Versi Dokumen:** 1.1 (draft revisi face enrollment multi-angle)
 
 ---
 
@@ -321,7 +321,7 @@ Fitur berikut berada di luar scope:
 13. Sistem akademik lengkap.
 14. Integrasi SSO kampus yang belum tersedia spesifik `[PERLU VALIDASI]`.
 15. Multi-campus enterprise architecture.
-16. Advanced anti-spoofing yang membutuhkan riset khusus.
+16. Advanced anti-spoofing yang membutuhkan riset khusus; basic liveness challenge hanya dapat ditambahkan sebagai peningkatan setelah MVP dan harus diuji terpisah.
 17. Video recording mahasiswa.
 18. Penyimpanan rekaman kamera.
 19. Sinkronisasi dengan perangkat jaringan laboratorium.
@@ -461,111 +461,114 @@ Pembatasan scope dilakukan karena proyek dikerjakan oleh dua mahasiswa dalam sat
 * Duplikasi identifier ditolak.
 * Mahasiswa tidak dapat mengakses modul admin.
 
-## 5.3 Face Enrollment
+## 5.3 Face Enrollment Multi-Angle
 
-**Tujuan:** Membuat template/embedding wajah milik pengguna.
+**Tujuan:** Mendaftarkan representasi wajah pengguna dari beberapa sudut agar verifikasi berikutnya lebih toleran terhadap variasi posisi wajah.
 
 **Aktor:** Mahasiswa.
 
-**Deskripsi:** Mahasiswa yang telah login membuka kamera browser. Sistem mengambil beberapa frame/citra yang memenuhi kualitas minimum, mendeteksi satu wajah, menghasilkan embedding menggunakan pretrained face model, kemudian menghasilkan template wajah pengguna.
+**Deskripsi:** Setelah login, mahasiswa menyetujui pemberitahuan penggunaan data biometrik dan mengikuti panduan kamera untuk mengambil wajah dari tiga pose: **depan, sedikit menoleh ke kiri, dan sedikit menoleh ke kanan**. Sistem memproses setiap citra menjadi embedding menggunakan pretrained face model. Citra mentah hanya diproses sementara dan tidak disimpan permanen pada MVP. Sistem menyimpan tiga sampel embedding terenkripsi beserta label pose dan versi model.
 
 **Precondition:**
 
-* Pengguna telah login.
-* Kamera browser tersedia.
-* Browser memberikan izin kamera.
-* Akun dalam status aktif.
+* Pengguna telah login dan akun aktif.
+* Pengguna telah membaca dan menyetujui pemberitahuan pemrosesan biometrik.
+* Kamera browser tersedia dan izin kamera diberikan.
+* Backend face service tersedia.
 
 **Main Flow:**
 
-1. User membuka halaman enrollment.
-2. Browser meminta akses kamera.
-3. User menempatkan wajah dalam area kamera.
-4. Sistem menangkap beberapa citra.
-5. Backend memvalidasi bahwa hanya satu wajah terdeteksi.
-6. Model menghasilkan embedding.
-7. Embedding dinormalisasi.
-8. Embedding dibuat menjadi template.
-9. Template disimpan secara aman.
-10. Sistem mencatat waktu enrollment dan model version.
+1. User membuka halaman Face Enrollment.
+2. Frontend menampilkan penjelasan tujuan, data yang diproses, masa retensi, dan cara meminta penghapusan atau pendaftaran ulang.
+3. Browser meminta akses kamera.
+4. UI memandu pengambilan pose depan, kiri, dan kanan satu per satu.
+5. Untuk setiap pose, backend memvalidasi file, kualitas citra, dan bahwa tepat satu wajah terdeteksi serta pose cukup sesuai.
+6. Jika citra valid, face service menghasilkan embedding untuk pose tersebut.
+7. Setelah ketiga pose valid, backend menyimpan satu enrollment set aktif dan tiga sampel embedding terenkripsi dengan label `FRONT`, `LEFT`, dan `RIGHT`.
+8. Backend mencatat model name/version, timestamp enrollment, dan status persetujuan; raw image dibuang setelah pemrosesan.
+9. UI menampilkan enrollment berhasil.
 
 **Alternative Flow:**
 
-* Tidak ada wajah → proses diulang.
-* Lebih dari satu wajah → ditolak.
-* Kualitas citra rendah → diminta mengambil ulang.
-* User belum login → `401`.
-* Template telah tersedia → enrollment lama diganti hanya sesuai aturan re-enrollment.
+* Tidak ada wajah, lebih dari satu wajah, citra buram, terlalu gelap, atau wajah terlalu miring → pose terkait diminta diambil ulang.
+* Kamera tidak diizinkan atau tidak tersedia → enrollment berhenti tanpa menyimpan template parsial.
+* Face service gagal → tampilkan error yang aman; jangan menandai enrollment berhasil.
+* Enrollment berhenti di tengah proses → sampel sementara dibuang atau enrollment ditandai belum aktif; hanya enrollment lengkap yang dapat dipakai untuk verifikasi.
+* Template sudah aktif → pendaftaran ulang dilakukan dengan alur replace/revoke yang jelas; jangan menghapus template lama sebelum enrollment pengganti valid.
 
-**Output:** Face template aktif.
+**Output:** Satu enrollment set aktif dengan sampel embedding terenkripsi untuk tiga pose. Tidak ada foto mentah yang disimpan permanen.
 
 **Business Rule:**
 
-* Tidak menyimpan foto mentah sebagai data biometrik permanen kecuali ada kebutuhan pengujian yang disetujui `[PERLU VALIDASI]`.
-* Satu user memiliki satu template aktif pada MVP.
-* Template menggunakan model/version yang tercatat.
+* Enrollment menggunakan pretrained model; sistem tidak melatih model dari nol.
+* Satu user memiliki maksimal satu enrollment set aktif pada MVP, yang dapat berisi beberapa sampel embedding.
+* Setiap sampel menyimpan label pose, versi model, dan embedding terenkripsi.
+* Jangan menyimpan foto mentah ke database atau Supabase Storage pada MVP.
+* Kunci enkripsi disimpan sebagai secret di lingkungan backend, bukan di database atau repository.
+* Perubahan model/preprocessing yang tidak kompatibel memerlukan rencana migrasi atau enrollment ulang.
 
 **Acceptance Criteria:**
 
-* Enrollment berhasil dengan citra yang memenuhi syarat.
-* Enrollment ditolak jika tidak ada wajah.
-* Enrollment ditolak jika terdapat lebih dari satu wajah.
-* Embedding tidak ditampilkan kepada user.
+* Pengguna dapat menyelesaikan tiga pose dengan panduan yang jelas.
+* Enrollment gagal jika satu atau lebih pose wajib belum valid.
+* Sistem menolak citra tanpa wajah atau dengan lebih dari satu wajah.
+* Enrollment set aktif hanya tersedia setelah ketiga sampel tersimpan berhasil.
+* Status enrollment dapat dibaca melalui API, tetapi embedding tidak pernah dikirim ke frontend.
+* Foto mentah tidak tersimpan pada database, Storage, log, atau folder permanen.
 
-## 5.4 Face Verification
+## 5.4 Face Verification 1:1
 
-**Tujuan:** Memastikan bahwa wajah pada kamera sesuai dengan template user yang sedang login.
+**Tujuan:** Memastikan bahwa wajah live dari kamera sesuai dengan enrollment set milik user yang sedang login.
 
 **Aktor:** Mahasiswa.
 
-**Deskripsi:** Sistem mengambil citra dari kamera browser, menghasilkan embedding dari wajah pada citra tersebut, kemudian membandingkannya dengan template wajah pengguna yang sedang login.
+**Deskripsi:** Saat presensi, user tidak perlu melakukan pendaftaran wajah ulang. Sistem mengambil satu frame frontal yang valid atau burst singkat beberapa frame, membentuk embedding, lalu membandingkannya **hanya dengan sampel embedding pada enrollment set milik user yang sedang login**. Aturan keputusan dan threshold ditentukan berdasarkan pengujian, bukan dipilih secara arbitrer.
 
 **Precondition:**
 
-* User login.
-* Template wajah tersedia.
-* Session praktikum aktif atau sesuai aturan presensi.
+* User login dan akun aktif.
+* Enrollment set aktif dan lengkap.
+* Session praktikum valid sesuai aturan presensi.
 * Kamera tersedia.
 
 **Main Flow:**
 
-1. User membuka halaman presensi.
-2. Backend memberikan challenge/status session.
-3. Browser membuka kamera.
-4. User mengarahkan wajah ke kamera.
-5. Browser menangkap frame.
-6. Citra dikirim ke backend.
-7. Backend mendeteksi satu wajah.
-8. Backend menghasilkan embedding.
-9. Backend mengambil template user.
-10. Backend menghitung similarity/distance.
-11. Hasil dibandingkan dengan threshold hasil pengujian.
-12. Jika memenuhi threshold, verification berhasil.
-13. Attendance dapat dilanjutkan.
+1. User membuka halaman presensi dan memilih session.
+2. Backend memvalidasi session, status akun, dan keberadaan enrollment set aktif.
+3. Browser membuka kamera dan menampilkan preview.
+4. Frontend menangkap frame frontal atau burst singkat sesuai kontrak API.
+5. Backend memvalidasi file, kualitas citra, dan tepat satu wajah.
+6. Face service menghasilkan embedding dari citra live.
+7. Backend mengambil semua sampel embedding aktif yang terkait dengan `user_id` dari sesi login; tidak ada pencarian identitas 1:N.
+8. Face service menghitung distance/similarity antara embedding live dan sampel tersimpan menggunakan model dan metrik yang sama.
+9. Backend menerapkan aturan keputusan yang telah ditetapkan melalui pengujian dan mencatat hasil verifikasi tanpa menyimpan citra mentah.
+10. Jika terverifikasi, proses check-in boleh dilanjutkan; jika gagal, attendance tidak dibuat.
 
 **Alternative Flow:**
 
-* Face tidak terdeteksi → pengguna mengambil gambar ulang.
-* Lebih dari satu wajah → verification ditolak.
-* Similarity tidak memenuhi threshold → verification failed.
-* Template tidak ada → user diarahkan ke enrollment.
-* Kamera tidak tersedia → proses berhenti.
-* Backend verification error → status sistem gagal diproses.
+* Enrollment belum tersedia atau tidak lengkap → arahkan user ke Face Enrollment.
+* Tidak ada wajah, lebih dari satu wajah, atau kualitas citra buruk → minta capture ulang dalam batas percobaan.
+* Wajah tidak cocok → kembalikan `VERIFICATION_FAILED`; jangan membuat attendance.
+* Face service atau database tidak tersedia → kembalikan error sistem; jangan menganggapnya sebagai hasil verifikasi gagal dan jangan membuat attendance.
+* Percobaan terlalu banyak → rate limit.
 
-**Output:** Verification result `verified=true/false`.
+**Output:** Hasil `verified=true/false` dan kode hasil yang aman. Embedding, threshold internal, dan sampel biometrik tidak dikirim ke frontend.
 
 **Business Rule:**
 
-* Verification selalu 1:1.
-* Template yang digunakan berasal dari user yang sedang login.
-* Threshold tidak ditentukan dengan angka arbitrer.
-* `[THRESHOLD PERLU DITENTUKAN MELALUI PENGUJIAN]`.
+* Verifikasi selalu 1:1 menggunakan identitas user yang telah login.
+* Threshold dan aturan pembandingan antarsampel harus ditetapkan melalui pengujian pasangan wajah positif/negatif dan dicatat versinya.
+* Strategi keputusan tidak boleh sekadar menerima nilai maksimum similarity tanpa pengujian false acceptance dan false rejection.
+* Foto mentah tidak disimpan permanen.
+* Verifikasi kamera web 2D bukan pengganti keamanan Face ID/face unlock pada perangkat yang memiliki sensor kedalaman, pemrosesan aman, dan anti-spoofing khusus.
 
 **Acceptance Criteria:**
 
-* User dengan wajah sesuai template dapat melewati proses verifikasi pada kondisi pengujian yang memenuhi.
-* User dengan wajah berbeda ditolak pada pengujian yang memenuhi.
-* User tidak dapat melakukan verification terhadap template user lain.
+* Pemilik enrollment set dapat diverifikasi pada kondisi kamera yang masuk kriteria pengujian.
+* Wajah orang berbeda ditolak sesuai hasil evaluasi threshold.
+* Backend hanya membaca enrollment set milik user login.
+* Verifikasi gagal atau error tidak membuat attendance.
+* Respons API tidak memuat embedding atau data biometrik mentah.
 
 ## 5.5 Session Praktikum
 
@@ -821,319 +824,174 @@ Pembatasan scope dilakukan karena proyek dikerjakan oleh dua mahasiswa dalam sat
 
 # ========================================
 
-# PART 6 — FACE VERIFICATION
+# PART 6 — FACE ENROLLMENT MULTI-ANGLE DAN FACE VERIFICATION 1:1
 
 # ========================================
 
-## 6.1 Konsep Face Verification
+## 6.1 Pengalaman yang Ditargetkan
 
-Face verification merupakan proses membandingkan dua representasi wajah untuk menentukan apakah keduanya berasal dari orang yang sama. Dalam proyek ini, satu representasi adalah template wajah milik user yang telah login, sedangkan representasi kedua berasal dari frame kamera browser saat proses presensi.
+Pengalaman pengguna terinspirasi dari alur pendaftaran wajah pada perangkat: pengguna mengikuti panduan kamera untuk mendaftarkan wajah dari beberapa sudut, kemudian saat presensi cukup membuka kamera untuk diperiksa kembali. Untuk proyek ini istilah yang digunakan adalah **multi-angle face enrollment dan 1:1 face verification**, bukan klaim bahwa sistem memiliki keamanan setara Face ID pada ponsel.
 
-Sistem tidak mencari siapa orang tersebut dari kumpulan seluruh wajah. Sistem hanya menjawab pertanyaan: **apakah wajah yang sedang berada di depan kamera sesuai dengan template milik akun yang sedang login?**
+Implementasi web memakai kamera browser 2D dan model pretrained. Face ID pada perangkat tertentu memanfaatkan kamera/sensor kedalaman, pemrosesan aman, dan mekanisme anti-spoofing khusus; karena itu implementasi web ini tidak boleh diklaim mempunyai tingkat keamanan yang sama. Dokumentasi Apple menerangkan penggunaan data kedalaman TrueDepth dan Secure Enclave pada Face ID: https://support.apple.com/id-id/102381.
 
-Model face recognition digunakan untuk mengubah wajah menjadi embedding berupa representasi numerik. Embedding kemudian dibandingkan menggunakan metrik similarity atau distance.
+## 6.2 Konsep Face Verification 1:1
 
-## 6.2 Perbedaan Face Verification dengan Face Recognition
+Sistem terlebih dahulu mengetahui identitas dari akun yang login. Sistem hanya menjawab apakah wajah live yang sedang diuji cocok dengan enrollment set milik akun tersebut. Sistem **tidak** mencari identitas wajah dari seluruh pengguna (1:N).
 
-Dalam konteks proyek ini, istilah face recognition digunakan sebagai istilah umum untuk teknologi pembentukan representasi wajah, sedangkan fungsi bisnis yang digunakan adalah **face verification**.
+Face model mengubah citra wajah menjadi embedding, yaitu representasi numerik. Embedding live dibandingkan dengan sampel enrollment yang tersimpan untuk user tersebut menggunakan metrik distance/similarity yang sama.
 
-**Face verification 1:1** memiliki dua input identitas:
+## 6.3 Enrollment Multi-Angle
 
-* identity claim berasal dari akun yang telah login;
-* face sample berasal dari kamera.
+Enrollment dilakukan melalui Web Mahasiswa setelah login dan persetujuan pemrosesan biometrik.
 
-Sistem kemudian melakukan pembandingan satu lawan satu.
+Pose MVP:
 
-**Face identification 1:N** menggunakan satu citra wajah dan mencari identitas yang paling sesuai dari banyak template. Pendekatan tersebut tidak digunakan sebagai mekanisme utama karena sistem telah mengetahui identitas user melalui login.
+1. `FRONT`: wajah menghadap kamera.
+2. `LEFT`: kepala menoleh sedikit ke kiri, dengan wajah masih terdeteksi jelas.
+3. `RIGHT`: kepala menoleh sedikit ke kanan, dengan wajah masih terdeteksi jelas.
 
-## 6.3 Alasan Penggunaan 1:1 Verification
+UI memberi instruksi visual per pose. Untuk setiap pose, sistem dapat mengambil beberapa frame sementara dan memilih satu frame yang memenuhi kualitas minimum. Jika pose tidak valid, pengguna mengulang pose tersebut. Enrollment baru berstatus aktif setelah ketiga sampel lolos validasi dan berhasil disimpan.
 
-Pendekatan 1:1 dipilih karena sesuai dengan alur bisnis presensi. Mahasiswa login terlebih dahulu, sehingga sistem telah memiliki `user_id`. Setelah itu, sistem hanya perlu memvalidasi kesesuaian wajah dengan template user tersebut.
-
-Pendekatan 1:1 juga membatasi proses pencarian template dan mengurangi kompleksitas pengelolaan pencarian identitas terhadap seluruh pengguna.
-
-Dari sisi scope proyek, 1:1 lebih realistis untuk dikerjakan oleh dua mahasiswa dibanding membangun sistem identification 1:N yang membutuhkan pengelolaan pencarian terhadap banyak template.
-
-## 6.4 Face Enrollment
-
-Face enrollment dilakukan melalui Web Mahasiswa.
-
-Alur enrollment adalah:
+Alur:
 
 ```text
-Login
+Login + persetujuan biometrik
   ↓
 Buka Face Enrollment
   ↓
-Browser meminta izin kamera
+Kamera aktif dan preview
   ↓
-Camera Preview
+Capture pose FRONT
   ↓
-Capture beberapa frame
+Validasi kualitas + satu wajah
   ↓
-Validasi satu wajah
+Capture pose LEFT
   ↓
-Face Detection + Alignment
+Validasi kualitas + satu wajah
   ↓
-Face Embedding
+Capture pose RIGHT
   ↓
-Normalisasi
+Validasi kualitas + satu wajah
   ↓
-Pembuatan Face Template
+Ekstraksi 3 embedding (pretrained model)
   ↓
-Template disimpan
+Simpan enrollment set + sampel terenkripsi
+  ↓
+Buang citra mentah dari memori
   ↓
 Enrollment berhasil
 ```
 
-Enrollment tidak dilakukan dengan membuat training dataset dan melatih model baru. Sistem menggunakan pretrained model.
+Satu user memiliki satu enrollment set aktif pada MVP, tetapi set tersebut berisi beberapa sampel. Sistem tidak menyimpan foto wajah mentah secara permanen.
 
-Enrollment menghasilkan embedding yang merepresentasikan wajah user. Template disimpan bersama metadata model sehingga ketika model berubah, template dapat diketahui dibuat menggunakan versi model mana.
+## 6.4 Data yang Disimpan
 
-## 6.5 Face Template / Embedding
+`face_templates` menjadi metadata enrollment set; sampel embedding disimpan pada tabel anak `face_template_samples`.
 
-Embedding adalah representasi numerik dari karakteristik wajah yang dihasilkan oleh model. Embedding tidak sama dengan foto wajah.
+Metadata enrollment set minimal:
 
-Dalam desain sistem:
+* `id`, `user_id`, `model_name`, `model_version`;
+* `status` (`ACTIVE` atau `REVOKED`);
+* `enrolled_at`, `updated_at`;
+* metadata persetujuan/versi pemberitahuan seperlunya, tanpa memasukkan data sensitif berlebihan.
 
-* `user_id` mengidentifikasi pemilik template.
-* `model_name` menyatakan model yang digunakan.
-* `model_version` menyatakan versi model.
-* `embedding_ciphertext` menyimpan embedding yang telah dilindungi.
-* `enrolled_at` menyimpan waktu enrollment.
-* `status` menunjukkan status template.
+Sampel minimal:
 
-Embedding tidak menjadi data pencarian 1:N. Sistem mengambil embedding berdasarkan `user_id` yang telah login.
+* `id`, `face_template_id`;
+* `pose` (`FRONT`, `LEFT`, `RIGHT`);
+* `embedding_ciphertext`;
+* `quality_status` dan `created_at`.
 
-## 6.6 Proses Verifikasi
+Kunci enkripsi disimpan sebagai secret backend dan tidak boleh disimpan dalam database atau repository. Embedding tidak sama dengan foto, tetapi tetap merupakan data biometrik sensitif sehingga harus dilindungi dengan kontrol akses ketat.
 
-Alur verifikasi:
+## 6.5 Verifikasi Saat Presensi
 
-```text
-User Login
-   ↓
-User membuka Presensi
-   ↓
-Validasi Session
-   ↓
-Browser Camera
-   ↓
-Capture Frame
-   ↓
-Upload ke API
-   ↓
-Face Detection
-   ↓
-Validasi Tepat 1 Wajah
-   ↓
-Face Alignment
-   ↓
-Embedding Extraction
-   ↓
-Ambil Template User
-   ↓
-Similarity / Distance Calculation
-   ↓
-Bandingkan dengan Threshold
-   ↓
-Verification Result
-   ↓
-Jika berhasil → Attendance Check-in
-```
-
-Model digunakan untuk menghasilkan embedding dari citra wajah. Tidak terdapat proses training model dari nol.
-
-## 6.7 Browser Camera Flow
-
-Web browser menggunakan `getUserMedia()` untuk membuka kamera.
-
-Proses frontend:
+Pada penggunaan normal, pengguna tidak perlu mengulang tiga pose setiap kali presensi. Alur MVP menangkap frame frontal atau burst singkat dari kamera, lalu membandingkannya dengan enrollment set milik akun yang login.
 
 ```text
-User membuka halaman verification
-        ↓
-Browser meminta permission
-        ↓
-Permission granted?
-   ┌────┴────┐
-  Ya        Tidak
-   ↓           ↓
-Preview     Error UI
-   ↓
-Capture
-   ↓
-POST multipart/form-data
-   ↓
-REST API
+Login
+  ↓
+Pilih session aktif
+  ↓
+Camera preview
+  ↓
+Capture frame frontal / burst singkat
+  ↓
+Validasi citra + tepat satu wajah
+  ↓
+Buat embedding live
+  ↓
+Ambil sampel FRONT/LEFT/RIGHT milik user login
+  ↓
+Hitung distance/similarity
+  ↓
+Aturan keputusan dan threshold hasil evaluasi
+  ↓
+Verified / Verification failed
+  ↓
+Jika verified → lanjut check-in
 ```
 
-Kamera hanya digunakan selama proses yang membutuhkan verification. Sistem tidak melakukan perekaman video permanen.
+Aturan pembandingan yang menggabungkan beberapa sampel enrollment harus ditetapkan melalui pengujian. Jangan menetapkan threshold secara arbitrer atau sekadar menggunakan kecocokan tertinggi tanpa mengukur dampak false acceptance.
 
-Implementasi produksi membutuhkan HTTPS agar akses kamera browser berjalan pada secure context, kecuali lingkungan lokal yang diizinkan browser.
+## 6.6 Face Model dan Versi
 
-## 6.8 Validasi Wajah
+Sistem memakai pretrained model; tidak melatih model dari nol. DeepFace digunakan sebagai orchestration layer dan ArcFace menjadi kandidat awal yang harus divalidasi. Model final ditetapkan setelah pengujian kompatibilitas, lisensi, akurasi lokal, serta waktu inference.
 
-Validasi citra dilakukan sebelum similarity calculation.
+Semua sampel dalam satu enrollment set harus dibuat dengan versi model dan preprocessing yang kompatibel. Perubahan model/detector/preprocessing yang mengubah dimensi atau distribusi embedding memerlukan strategi migrasi atau enrollment ulang.
 
-Validasi minimal:
+## 6.7 Validasi Citra
 
-1. File merupakan image yang valid.
-2. Ukuran file berada dalam batas yang ditentukan.
-3. MIME type sesuai.
-4. Tepat satu wajah terdeteksi.
-5. Area wajah memenuhi ukuran minimum.
-6. Wajah tidak berada pada kondisi terlalu ekstrem sehingga embedding tidak stabil.
-7. Tidak terdapat lebih dari satu wajah dalam frame.
-8. Image processing berhasil.
+Validasi minimum pada tiap pose dan verifikasi:
 
-Jika salah satu syarat tidak terpenuhi, sistem tidak melanjutkan verification.
+1. File benar-benar berupa citra yang dapat dibaca.
+2. MIME type dan ukuran file sesuai batas.
+3. Tepat satu wajah terdeteksi.
+4. Area wajah cukup besar dan tidak terlalu blur.
+5. Pencahayaan cukup dan tidak ekstrem.
+6. Pose sesuai dengan pose yang sedang diminta untuk enrollment.
+7. Proses detection/alignment/embedding selesai tanpa error.
 
-## 6.9 Threshold/Similarity
+Jika syarat tidak terpenuhi, jangan menyimpan sampel enrollment dan jangan membuat attendance. Tampilkan pesan yang mudah dipahami, tanpa membocorkan detail model internal.
 
-Model menghasilkan embedding kemudian sistem menghitung similarity atau distance. Nilai tersebut dibandingkan dengan threshold.
+## 6.8 Threshold dan Evaluasi
 
-Threshold bersifat bergantung pada model, detector, preprocessing, dataset validasi, dan kondisi kamera. Oleh karena itu, threshold tidak ditentukan berdasarkan angka arbitrer.
+Threshold bergantung pada model, detector, preprocessing, kamera, dan data pengujian. Threshold final belum dapat ditentukan hanya dari PRD.
 
-Ketentuan final:
+Pengujian minimum meliputi pasangan wajah orang yang sama dan orang berbeda, dengan kondisi kamera/pencahayaan bervariasi. Evaluasi false acceptance dan false rejection, tentukan aturan keputusan, lalu catat versi threshold/configuration yang digunakan. Hasil pengujian harus menjadi dasar acceptance criteria.
 
-**[THRESHOLD PERLU DITENTUKAN MELALUI PENGUJIAN]**
+## 6.9 Spoofing dan Liveness
 
-Pengujian threshold minimal menggunakan data positif dan negatif, yaitu:
+Kamera web 2D dan pencocokan embedding saja tidak menjamin bahwa input berasal dari wajah manusia yang hadir langsung. Foto pada layar atau media lain masih merupakan risiko. Multi-angle enrollment meningkatkan variasi sampel rujukan tetapi **tidak dengan sendirinya menjadi liveness detection**.
 
-* pasangan wajah dari orang yang sama;
-* pasangan wajah dari orang yang berbeda.
+Untuk MVP, anti-spoofing tingkat lanjut tetap di luar scope. Basic active liveness challenge, misalnya meminta gerakan kepala secara acak pada sesi tertentu, dapat dipertimbangkan sebagai peningkatan terpisah setelah pipeline verifikasi stabil. Jika belum diimplementasikan dan diuji, dokumentasikan batasan ini secara jelas.
 
-Evaluasi harus memperhatikan false acceptance dan false rejection.
+## 6.10 Privasi dan Retensi
 
-## 6.10 Penanganan Wajah Tidak Terdeteksi
+* Beri penjelasan dan minta persetujuan pengguna sebelum enrollment.
+* Simpan hanya embedding terenkripsi dan metadata minimum yang diperlukan.
+* Jangan menyimpan raw image di PostgreSQL, Supabase Storage, log, atau folder permanen pada MVP.
+* Raw image diproses sementara di memori dan dibuang setelah ekstraksi embedding.
+* Jangan pernah mengirim embedding ke frontend atau menampilkannya kepada admin.
+* Batasi akses ke tabel biometrik hanya untuk backend/face service yang membutuhkannya.
+* Kunci enkripsi berada di environment secret/secret manager, bukan di database.
+* Sediakan proses revoke dan re-enrollment; definisikan penghapusan seluruh sampel saat enrollment dicabut atau akun dihapus.
+* Kebijakan persetujuan, retensi dan penghapusan tetap perlu divalidasi dengan kebijakan institusi.
 
-Jika wajah tidak terdeteksi:
+## 6.11 Keterbatasan Sistem
 
-1. Backend mengembalikan error terstruktur.
-2. Frontend menampilkan informasi bahwa wajah belum terbaca.
-3. Pengguna diminta memperbaiki posisi wajah atau kondisi pencahayaan.
-4. Citra tidak disimpan sebagai template.
-5. Pengguna dapat mencoba kembali dalam batas request yang ditentukan.
+Sistem dipengaruhi kualitas kamera, pencahayaan, pose, perubahan penampilan, perangkat, dan performa model. Karena memakai kamera browser 2D, sistem bukan pengganti autentikasi biometrik perangkat yang memiliki sensor kedalaman dan hardware keamanan khusus. Jangan menyatakan sistem mampu mencegah seluruh bentuk titip absen atau spoofing.
 
-## 6.11 Penanganan Kamera Tidak Tersedia
+## 6.12 Acceptance Criteria untuk Modul Wajah
 
-Jika browser tidak memiliki kamera atau user menolak permission:
-
-1. Frontend mendeteksi kegagalan `getUserMedia()`.
-2. Verification tidak dimulai.
-3. User menerima informasi bahwa kamera tidak tersedia.
-4. Backend tidak membuat attendance.
-5. Status error tidak dianggap sebagai verification failed.
-
-## 6.12 Penanganan Verification Failed
-
-Verification failed terjadi apabila citra valid dan wajah terdeteksi tetapi hasil perbandingan tidak memenuhi threshold.
-
-Sistem:
-
-* tidak membuat attendance;
-* tidak membuat allocation;
-* mencatat status verification sebagai failed untuk audit sesuai kebutuhan;
-* memberikan response `VERIFICATION_FAILED`;
-* mengizinkan percobaan ulang sesuai rate limit.
-
-Sistem tidak menampilkan embedding atau detail internal model kepada pengguna.
-
-## 6.13 Risiko Spoofing
-
-Face verification berbasis citra dari browser memiliki risiko spoofing, misalnya penggunaan foto atau tampilan wajah dari media lain. Kamera browser tanpa mekanisme liveness khusus tidak memberikan jaminan bahwa input berasal dari manusia yang benar-benar berada di depan kamera.
-
-Pada MVP, anti-spoofing tingkat lanjut tidak menjadi komponen wajib. Mitigasi yang diterapkan adalah:
-
-* login sebelum verification;
-* 1:1 verification;
-* validasi tepat satu wajah;
-* pembatasan jumlah percobaan;
-* audit verification;
-* tidak menyimpan rekaman video;
-* penggunaan browser camera secara langsung;
-* threshold berdasarkan pengujian.
-
-Sistem dirancang untuk **mengurangi potensi penyalahgunaan atau titip absen**.
-
-## 6.14 Keterbatasan Sistem
-
-Keterbatasan meliputi:
-
-* kualitas kamera;
-* pencahayaan;
-* posisi wajah;
-* perubahan penampilan;
-* performa model;
-* perangkat dengan CPU terbatas;
-* variasi kamera browser;
-* risiko spoofing;
-* kemungkinan false acceptance;
-* kemungkinan false rejection.
-
-Hasil verification tidak boleh diperlakukan sebagai jaminan absolut terhadap penyalahgunaan.
-
-## 6.15 Privacy dan Security
-
-Data biometrik diperlakukan sebagai data sensitif. Sistem menggunakan prinsip minimization.
-
-Ketentuan:
-
-1. Template disimpan untuk tujuan verifikasi.
-2. Raw image dari kamera tidak disimpan sebagai arsip permanen pada MVP.
-3. Embedding tidak dikirim kembali ke frontend.
-4. Embedding tidak dimasukkan ke log aplikasi.
-5. Endpoint face template memerlukan authorization.
-6. Data biometric diakses hanya oleh service yang memerlukannya.
-7. Admin tidak mendapatkan raw biometric data melalui UI.
-8. Penghapusan akun harus memiliki kebijakan penghapusan template `[PERLU VALIDASI]`.
-9. Penyimpanan dan pemrosesan biometric harus menyesuaikan kebijakan institusi `[PERLU VALIDASI]`.
-
-## 6.16 Strategi Penyimpanan Data Biometrik
-
-Strategi penyimpanan:
-
-```text
-Browser Image
-   ↓
-HTTPS
-   ↓
-Backend Memory
-   ↓
-Face Detection
-   ↓
-Embedding
-   ↓
-Encryption / Protection
-   ↓
-Database
-```
-
-Raw image hanya berada pada memory selama pemrosesan apabila tidak diperlukan lagi. Embedding disimpan pada database dengan perlindungan akses.
-
-Kolom biometric dirancang terpisah dari data profil biasa sehingga kontrol akses dapat diperketat.
-
-Struktur:
-
-```text
-face_templates
-- id
-- user_id
-- model_name
-- model_version
-- embedding_ciphertext
-- status
-- enrolled_at
-- updated_at
-```
-
-## 6.17 Kebutuhan Teknologi Face Verification
-
-Teknologi final menggunakan Python-based face verification library dengan pretrained model. Keputusan implementasi menggunakan **DeepFace sebagai orchestration layer dengan model ArcFace sebagai salah satu pilihan model utama yang diuji**. DeepFace menyediakan fungsi verification dan representasi embedding serta mendukung sejumlah model pretrained, termasuk ArcFace.
-
-Model tidak dilatih dari nol. Model pretrained menghasilkan embedding, sedangkan backend proyek mengatur proses enrollment, penyimpanan template, verification 1:1, threshold, dan integrasi dengan attendance.
-
-Pemilihan model final yang digunakan pada deployment ditetapkan setelah pengujian kompatibilitas, akurasi lokal, waktu inference, penggunaan resource, dan validasi lisensi model. Pretrained model memiliki ketentuan lisensi masing-masing sehingga pemeriksaan lisensi harus dilakukan sebelum deployment publik.
+* Enrollment mengharuskan pose FRONT, LEFT, dan RIGHT valid.
+* Set enrollment yang belum lengkap tidak dapat digunakan untuk presensi.
+* Verifikasi hanya membandingkan wajah live dengan enrollment set user yang login.
+* Enrollment menyimpan tiga sampel embedding terenkripsi beserta pose dan versi model.
+* Raw image tidak tersimpan permanen.
+* Threshold dan aturan keputusan terdokumentasi berdasarkan pengujian.
+* Jika verifikasi gagal/error, attendance tidak dibuat.
+* Sistem menyediakan status enrollment, revoke, dan re-enrollment yang terkontrol.
 
 ---
 
@@ -1172,63 +1030,58 @@ Response Profile + Role
 Dashboard
 ```
 
-## 7.2 Flow Face Enrollment
+## 7.2 Flow Face Enrollment Multi-Angle
 
 ```text
-Login
+Login + persetujuan biometrik
   ↓
-Profile / Face Enrollment
+Buka Face Enrollment
   ↓
-Request Camera
+Minta izin kamera
   ↓
-Permission?
-  ├── Tidak → Error Camera
-  ↓ Ya
-Preview
+Capture FRONT → validasi
+  ↓ valid
+Capture LEFT → validasi
+  ↓ valid
+Capture RIGHT → validasi
+  ↓ valid
+Ekstraksi embedding untuk tiap pose
   ↓
-Capture
+Simpan 3 sampel terenkripsi + metadata model
   ↓
-Validasi Image
+Buang raw image dari memori
   ↓
-Tepat 1 Wajah?
-  ├── Tidak → Capture Ulang
-  ↓ Ya
-Face Embedding
-  ↓
-Encrypt / Protect Embedding
-  ↓
-Simpan Template
-  ↓
-Enrollment Success
+Enrollment aktif
 ```
 
-## 7.3 Flow Presensi
+Jika salah satu pose gagal divalidasi, ulangi pose tersebut. Jika proses berhenti sebelum ketiga sampel tersimpan, enrollment tidak boleh berstatus aktif.
+
+## 7.3 Flow Presensi dengan Face Verification
 
 ```text
 Login
   ↓
 Pilih Session
   ↓
-Session Valid?
-  ├── Tidak → Error
+Session Valid dan Enrollment Aktif?
+  ├── Tidak → Error / arahkan enrollment
   ↓ Ya
-Cek Existing Attendance
+Buka kamera + capture frame frontal/burst singkat
   ↓
-Sudah Hadir?
-  ├── Ya → Duplicate Attendance
-  ↓ Tidak
-Open Camera
+Validasi citra dan satu wajah
   ↓
-Capture Frame
+Ekstraksi embedding live
   ↓
-Face Verification 1:1
+Ambil 3 sampel enrollment user login
+  ↓
+Similarity/distance + aturan keputusan hasil evaluasi
   ↓
 Verified?
-  ├── Tidak → Verification Failed
+  ├── Tidak → Verification failed, attendance tidak dibuat
   ↓ Ya
-Create Attendance
+Cek duplicate attendance
   ↓
-Database Transaction
+Buat attendance dalam transaksi + waktu server
   ↓
 Attendance Success
 ```
@@ -1617,7 +1470,7 @@ Komponen eksternal hanya berupa layanan deployment/infrastruktur dan package/mod
 
 ## 10.1 Keputusan Struktur Database
 
-Database final menggunakan sembilan tabel inti:
+Database final menggunakan sembilan tabel inti bisnis dan satu tabel tambahan untuk sampel embedding multi-angle:
 
 1. `roles`
 2. `users`
@@ -1628,8 +1481,9 @@ Database final menggunakan sembilan tabel inti:
 7. `asset_allocations`
 8. `maintenance`
 9. `audit_logs`
+10. `face_template_samples`
 
-Tabel `maintenance_history` tidak dipisahkan dalam MVP karena histori maintenance dapat direpresentasikan sebagai record append/update pada tabel `maintenance` dengan timestamp dan status. Pemisahan `maintenance_history` tidak diperlukan selama kebutuhan hanya mencatat satu alur maintenance per kejadian.
+Tabel `face_template_samples` menyimpan tiga sampel embedding per enrollment set (`FRONT`, `LEFT`, `RIGHT`); tabel `face_templates` menyimpan metadata enrollment set. Tabel `maintenance_history` tidak dipisahkan dalam MVP karena histori maintenance dapat direpresentasikan sebagai record append/update pada tabel `maintenance` dengan timestamp dan status. Pemisahan `maintenance_history` tidak diperlukan selama kebutuhan hanya mencatat satu alur maintenance per kejadian.
 
 ## 10.2 Tabel `roles`
 
@@ -1667,21 +1521,45 @@ Constraint:
 
 ## 10.4 Tabel `face_templates`
 
-| Field                | Tipe         | Constraint                               |
-| -------------------- | ------------ | ---------------------------------------- |
-| id                   | UUID         | PK                                       |
-| user_id              | UUID         | FK users.id, UNIQUE untuk template aktif |
-| model_name           | VARCHAR(100) | NOT NULL                                 |
-| model_version        | VARCHAR(100) | NOT NULL                                 |
-| embedding_ciphertext | BYTEA        | NOT NULL                                 |
-| status               | VARCHAR(20)  | NOT NULL                                 |
-| enrolled_at          | TIMESTAMP    | NOT NULL                                 |
-| updated_at           | TIMESTAMP    | NOT NULL                                 |
+Tabel ini menyimpan metadata satu enrollment set untuk satu user. Data embedding dipisahkan ke tabel anak agar beberapa pose dapat disimpan secara terstruktur.
+
+| Field       | Tipe         | Constraint                      |
+| ----------- | ------------ | ------------------------------- |
+| id          | UUID         | PK                              |
+| user_id     | UUID         | FK users.id, NOT NULL           |
+| model_name  | VARCHAR(100) | NOT NULL                        |
+| model_version | VARCHAR(100) | NOT NULL                     |
+| consent_version | VARCHAR(50) | NOT NULL                     |
+| consented_at | TIMESTAMP    | NOT NULL                      |
+| status      | VARCHAR(20)  | NOT NULL                        |
+| enrolled_at | TIMESTAMP    | NOT NULL                        |
+| updated_at  | TIMESTAMP    | NOT NULL                        |
 
 Constraint:
 
-* satu user memiliki maksimal satu template aktif pada MVP;
+* Maksimal satu enrollment set `ACTIVE` per user pada MVP; enforce dengan partial unique index pada `user_id` untuk baris `status = 'ACTIVE'`.
 * `status IN ('ACTIVE','REVOKED')`.
+* `consent_version` dan `consented_at` mencatat versi pemberitahuan dan waktu persetujuan.
+* Enrollment baru hanya diaktifkan setelah seluruh pose wajib valid dan seluruh sampel berhasil disimpan.
+
+## 10.4.1 Tabel `face_template_samples`
+
+| Field                 | Tipe         | Constraint                                  |
+| --------------------- | ------------ | ------------------------------------------- |
+| id                    | UUID         | PK                                          |
+| face_template_id      | UUID         | FK face_templates.id, NOT NULL              |
+| pose                  | VARCHAR(20)  | NOT NULL                                    |
+| embedding_ciphertext  | BYTEA        | NOT NULL                                    |
+| quality_status        | VARCHAR(20)  | NOT NULL                                    |
+| created_at            | TIMESTAMP    | NOT NULL                                    |
+
+Constraint:
+
+* `pose IN ('FRONT','LEFT','RIGHT')`.
+* `UNIQUE (face_template_id, pose)` untuk enrollment set MVP.
+* Sampel harus dibuat oleh model/preprocessing yang kompatibel dengan metadata enrollment set.
+* Tidak ada raw image column.
+* Enrollment set dianggap lengkap bila memiliki sampel valid untuk ketiga pose.
 
 ## 10.5 Tabel `lab_sessions`
 
@@ -1822,7 +1700,7 @@ roles
   │
   └────< users
            │
-           ├────< face_templates
+           ├────< face_templates ────< face_template_samples
            │
            ├────< attendance >──── lab_sessions
            │
@@ -1853,6 +1731,7 @@ users
 ROLE
  └──< USER
        ├──< FACE_TEMPLATE
+       │      └──< FACE_TEMPLATE_SAMPLE (FRONT / LEFT / RIGHT)
        ├──< ATTENDANCE >── LAB_SESSION
        ├──< ASSET_ALLOCATION >── ASSET
        ├──< AUDIT_LOG
@@ -1895,12 +1774,14 @@ ASSET
 
 ## 11.3 Face API
 
-| Method | Endpoint                | Role      | Auth | Request                      | Response              | Validation           | Status | Error   |
-| ------ | ----------------------- | --------- | ---- | ---------------------------- | --------------------- | -------------------- | ------ | ------- |
-| POST   | `/api/v1/face/enroll`   | Mahasiswa | Yes  | multipart image              | enrollment status     | one face, size, MIME | 201    | 400,422 |
-| GET    | `/api/v1/face/status`   | Mahasiswa | Yes  | none                         | enrolled/not enrolled | token                | 200    | 401     |
-| POST   | `/api/v1/face/verify`   | Mahasiswa | Yes  | multipart image + session_id | verification result   | one face, session    | 200    | 400,422 |
-| DELETE | `/api/v1/face/template` | Admin     | Yes  | user identifier              | revoke status         | admin access         | 204    | 403,404 |
+| Method | Endpoint                | Role      | Auth | Request                                                    | Response                          | Validation                                 | Status | Error        |
+| ------ | ----------------------- | --------- | ---- | ---------------------------------------------------------- | --------------------------------- | ------------------------------------------ | ------ | ------------ |
+| POST   | `/api/v1/face/enroll`   | Mahasiswa | Yes  | multipart: `front_image`, `left_image`, `right_image`     | enrollment status + sample count  | consent, one face/pose, quality, size, MIME | 201    | 400,422,503  |
+| GET    | `/api/v1/face/status`   | Mahasiswa | Yes  | none                                                       | enrolled/status/pose completeness | auth + ownership                            | 200    | 401          |
+| POST   | `/api/v1/face/verify`   | Mahasiswa | Yes  | multipart: live `image` or short frame burst             | verified/status code              | active enrollment, one face, quality         | 200    | 400,422,429,503 |
+| DELETE | `/api/v1/face/template` | Admin     | Yes  | user identifier                                            | revoke status                     | admin access; revoke all samples             | 204    | 403,404      |
+
+API tidak pernah mengembalikan embedding. File input diproses sementara dan tidak disimpan sebagai file permanen. Endpoint `/api/v1/face/verify` hanya mengembalikan hasil verifikasi dan tidak membuat attendance. Endpoint aktual check-in wajib menjalankan verifikasi di server dari citra yang dikirim saat check-in; backend tidak boleh mempercayai flag `verified=true` dari frontend. Enrollment tidak boleh dinyatakan berhasil sebelum ketiga sampel pose tersimpan secara konsisten.
 
 ## 11.4 Session API
 
@@ -1916,7 +1797,7 @@ ASSET
 
 | Method | Endpoint                       | Role      | Auth | Request                                      | Response        | Validation               | Status | Error       |
 | ------ | ------------------------------ | --------- | ---- | -------------------------------------------- | --------------- | ------------------------ | ------ | ----------- |
-| POST   | `/api/v1/attendance/check-in`  | Mahasiswa | Yes  | session_id, face sample/verification context | attendance      | active session, verified | 201    | 400,409,422 |
+| POST   | `/api/v1/attendance/check-in`  | Mahasiswa | Yes  | multipart: `session_id` + live `image`/short frame burst | attendance      | active session, server-side face verification | 201    | 400,409,422,429,503 |
 | POST   | `/api/v1/attendance/check-out` | Mahasiswa | Yes  | session_id                                   | attendance      | existing check-in        | 200    | 409,422     |
 | GET    | `/api/v1/attendance/history`   | Mahasiswa | Yes  | filters                                      | own history     | ownership                | 200    | 401         |
 | GET    | `/api/v1/attendance`           | Admin     | Yes  | filters                                      | attendance list | admin access             | 200    | 403         |
@@ -2367,8 +2248,8 @@ Product backlog berisi kebutuhan:
 
 * authentication;
 * user management;
-* face enrollment;
-* face verification;
+* multi-angle face enrollment (FRONT/LEFT/RIGHT);
+* face verification 1:1;
 * session;
 * attendance;
 * assets;
@@ -2461,8 +2342,8 @@ Output:
 Output:
 
 * browser camera;
-* face enrollment;
-* face embedding;
+* guided multi-angle face enrollment (FRONT/LEFT/RIGHT);
+* multiple encrypted face embeddings per enrollment set;
 * verification service;
 * attendance;
 * session validation;
@@ -3045,7 +2926,7 @@ Go + Fiber dipilih sebagai backend utama untuk menangani seluruh REST API (auth,
 
 **Keputusan final database:** **PostgreSQL (Supabase)**.
 
-Database menggunakan Supabase sebagai managed PostgreSQL. Supabase menyediakan PostgreSQL standar yang dapat diakses menggunakan connection string biasa dari backend Go maupun microservice Python. Supabase Storage digunakan untuk penyimpanan file foto wajah.
+Database menggunakan Supabase sebagai managed PostgreSQL yang dapat diakses melalui connection string dari backend Go maupun microservice Python. Pada MVP, Supabase Storage tidak digunakan untuk menyimpan foto wajah mentah. Foto diproses sementara di memori dan yang disimpan hanya sampel embedding terenkripsi di PostgreSQL.
 
 ## 21.4 Face Verification
 
@@ -3105,7 +2986,7 @@ Komponen:
 * Web Service untuk Go + Fiber (backend utama);
 * Web Service untuk Python FastAPI (microservice face verification);
 * Supabase managed PostgreSQL database;
-* Supabase Storage untuk file foto wajah.
+* Tidak menggunakan persistent face-image storage pada MVP; sampel embedding disimpan terenkripsi di PostgreSQL.
 
 Nama environment production:
 
@@ -3181,7 +3062,7 @@ Supabase PostgreSQL
 
 **Database:** Supabase managed PostgreSQL.
 
-**Storage:** Supabase Storage untuk file foto wajah.
+**Storage:** Tidak menggunakan persistent face-image storage pada MVP; sampel embedding disimpan terenkripsi di PostgreSQL.
 
 **Source Code:** GitHub.
 

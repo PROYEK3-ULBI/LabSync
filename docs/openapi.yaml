@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: LabSync API
+  description: Web-based lab attendance + asset management system
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /auth/login:
+    post:
+      summary: Login pengguna (Student/Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: OK. Set-Cookie HttpOnly.
+        '401':
+          description: Unauthorized
+  /auth/me:
+    get:
+      summary: Ambil profil user login dari cookie
+      responses:
+        '200':
+          description: Profil user
+  /face/enroll:
+    post:
+      summary: Multi-angle face enrollment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                front_image:
+                  type: string
+                  format: binary
+                left_image:
+                  type: string
+                  format: binary
+                right_image:
+                  type: string
+                  format: binary
+                consent_agreed:
+                  type: boolean
+      responses:
+        '200':
+          description: Enrollment sukses (3 samples tersimpan)
+  /attendance/check-in:
+    post:
+      summary: Presensi menggunakan Face Verification 1:1
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Check-in berhasil
+        '400':
+          description: Wajah tidak cocok / threshold tidak tercapai
+        '409':
+          description: Sudah check-in pada sesi ini
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+security:
+  - cookieAuth: []
