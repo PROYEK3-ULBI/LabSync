@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { api, ApiError, type AuthUser } from '../lib/api'
 import { Icon } from './icons'
 import { Alert, Button, Field, Input } from './ui'
 
@@ -8,32 +9,35 @@ export function Login({
   onSwitchRole,
 }: {
   role: 'student' | 'admin'
-  onLogin: () => void
+  onLogin: (user: AuthUser) => void
   onSwitchRole: () => void
 }) {
   const isStudent = role === 'student'
-  const [email, setEmail] = useState(isStudent ? 'ahmad.fauzan@student.univ.ac.id' : 'dewi.laboran@univ.ac.id')
+  const [email, setEmail] = useState(isStudent ? 'MHS-DEMO-001' : 'ADM-DEMO-001')
   const [pw, setPw] = useState('')
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [touched, setTouched] = useState(false)
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setTouched(true)
     setErr(null)
     if (!email || !pw) return
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      // demo: password "demo" fails to show error state, anything else succeeds
-      if (pw.toLowerCase() === 'salah') {
-        setErr('Email atau kata sandi tidak sesuai. Silakan periksa kembali.')
-        return
+    try {
+      const res = await api.auth.login({ identifier: email, password: pw })
+      onLogin(res.user)
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErr(error.message)
+      } else {
+        setErr('Gagal menghubungi server. Pastikan backend aktif.')
       }
-      onLogin()
-    }, 1100)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const accent = isStudent ? 'var(--color-primary)' : '#1d2939'
@@ -157,8 +161,7 @@ export function Login({
           </form>
 
           <p className="mt-4 text-xs text-[var(--color-text-3)] leading-relaxed">
-            Petunjuk demo: gunakan kata sandi apa pun untuk masuk, atau ketik <span className="font-mono">salah</span> untuk
-            melihat status kesalahan kredensial.
+              Akun demo: admin <span className="font-mono">ADM-DEMO-001</span> / <span className="font-mono">AdminDemo123!</span>, mahasiswa <span className="font-mono">MHS-DEMO-001</span> / <span className="font-mono">StudentDemo123!</span>.
           </p>
 
           <div className="mt-6 pt-5 border-t border-[var(--color-border)] flex items-center justify-between text-sm">
