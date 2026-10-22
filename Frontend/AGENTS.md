@@ -10,6 +10,7 @@ Run from `Frontend/`:
 pnpm dev       # Vite dev server on port 8443
 pnpm build     # production build
 pnpm preview   # serve production build
+pnpm test      # node:test tests in src/lib/*.test.ts
 pnpm format    # oxfmt formatter
 ```
 
@@ -17,7 +18,7 @@ pnpm format    # oxfmt formatter
 
 - Node 22, pnpm 10.34.3 (pinned in `.mise.toml`)
 - Both `pnpm-lock.yaml` and `package-lock.json` exist — use **pnpm**
-- No ESLint, no Prettier, no test framework configured
+- Tests use Node's built-in `node:test`; no Jest/Vitest config
 - No CI/CD
 
 ## Path alias

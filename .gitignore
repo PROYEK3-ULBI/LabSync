@@ -1,0 +1,35 @@
+# Environment variables (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Python / face_service
+face_service/venv/
+face_service/.venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+
+# Go / backend
+backend/bin/
+backend/tmp/
+
+# Node / Frontend
+node_modules/
+Frontend/dist/
+Frontend/.vite/
+Frontend/*.tsbuildinfo
+Frontend/logs/
+*-debug.log*
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+.claude-replay.*
+.tmp-*
